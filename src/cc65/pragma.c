@@ -75,6 +75,7 @@ typedef enum {
     PRAGMA_DATA_NAME,
     PRAGMA_INLINE_STDFUNCS,
     PRAGMA_LOCAL_STRINGS,
+    PRAGMA_LONGCRT,
     PRAGMA_MESSAGE,
     PRAGMA_OPTIMIZE,
     PRAGMA_REGISTER_VARS,
@@ -86,7 +87,6 @@ typedef enum {
     PRAGMA_WRAPPED_CALL,
     PRAGMA_WRITABLE_STRINGS,
     PRAGMA_ZPSYM,
-    PRAGMA_LONGCRT,
 } pragma_t;
 
 /* Pragma table */
@@ -111,6 +111,7 @@ static const struct Pragma {
     { "inline_stdfuncs",        PRAGMA_INLINE_STDFUNCS    },
     { "local-strings",          PRAGMA_LOCAL_STRINGS      },
     { "local_strings",          PRAGMA_LOCAL_STRINGS      },
+    { "longcrt",                PRAGMA_LONGCRT            },
     { "message",                PRAGMA_MESSAGE            },
     { "optimize",               PRAGMA_OPTIMIZE           },
     { "register-vars",          PRAGMA_REGISTER_VARS      },
@@ -128,7 +129,6 @@ static const struct Pragma {
     { "writable-strings",       PRAGMA_WRITABLE_STRINGS   },
     { "writable_strings",       PRAGMA_WRITABLE_STRINGS   },
     { "zpsym",                  PRAGMA_ZPSYM              },
-    { "longcrt",                PRAGMA_LONGCRT            },
 };
 #define PRAGMA_COUNT    (sizeof (Pragmas) / sizeof (Pragmas[0]))
 

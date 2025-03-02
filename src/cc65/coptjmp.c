@@ -791,7 +791,6 @@ unsigned OptRTL (CodeSeg* S)
             N->OPC == OP65_RTL) {
 
             /* Change the jsl to a jml and use the additional info for a jump */
-            fprintf(stderr, "Optimized to JML\n");
             E->AM = AM65_BRA;
             CE_ReplaceOPC (E, OP65_JML);
 
