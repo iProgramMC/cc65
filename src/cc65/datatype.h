@@ -923,6 +923,16 @@ INLINE int IsQualFastcall (const Type* T)
 #endif
 
 #if defined(HAVE_INLINE)
+INLINE int IsQualLongFn (const Type* T)
+/* Return true if the given type has a longfn qualifier */
+{
+    return (T->C & T_QUAL_LONGFN) != 0;
+}
+#else
+#  define IsQualLongFn(T)     (((T)->C & T_QUAL_LONGFN) != 0)
+#endif
+
+#if defined(HAVE_INLINE)
 INLINE int IsQualCDecl (const Type* T)
 /* Return true if the given type has a cdecl qualifier */
 {
@@ -982,6 +992,12 @@ int IsVariadicFunc (const Type* T) attribute ((const));
 int IsFastcallFunc (const Type* T) attribute ((const));
 /* Return true if this is a function type or pointer to function type with
 ** __fastcall__ calling convention.
+** Check fails if the type is not a function or a pointer to function.
+*/
+
+int IsLongFnFunc (const Type* T) attribute ((const));
+/* Return true if this is a function type or pointer to function type by
+** __longfn__ calling convention flag.
 ** Check fails if the type is not a function or a pointer to function.
 */
 

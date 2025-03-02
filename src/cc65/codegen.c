@@ -57,6 +57,7 @@
 #include "codeseg.h"
 #include "dataseg.h"
 #include "error.h"
+#include "function.h"
 #include "global.h"
 #include "segments.h"
 #include "stackptr.h"
@@ -2363,7 +2364,7 @@ static void oper (unsigned Flags, unsigned long Val, const char* const* Subs)
     }
 
     /* Output the operation */
-    AddCodeLine ("%s %s", JsrOrJsl(/*TODO: What kind of function are we calling? */ 0), *Subs);
+    AddCodeLine ("%s %s", CrtJsrOrJsl(), *Subs);
 
     /* The operation will pop it's argument */
     pop (Flags);
@@ -2486,14 +2487,15 @@ void g_swap (unsigned flags)
 
 
 
-void g_call (unsigned Flags, const char* Label, unsigned ArgSize)
+void g_call (unsigned Flags, const char* Label, unsigned ArgSize, int FnIsLong)
 /* Call the specified subroutine name */
 {
     if ((Flags & CF_FIXARGC) == 0) {
         /* Pass the argument count */
         AddCodeLine ("ldy #$%02X", ArgSize);
     }
-    AddCodeLine ("%s _%s", JsrOrJsl(/*TODO: Figure out what kind of call this is? */ 0), Label);
+    
+    AddCodeLine ("%s _%s", JsrOrJsl(FnIsLong ? 1 : 0), Label);
     StackPtr += ArgSize;                /* callee pops args */
 }
 
@@ -4630,7 +4632,7 @@ void g_initstatic (unsigned InitLabel, unsigned VarLabel, unsigned Size)
         g_getimmed (CF_STATIC, InitLabel, 0);
         AddCodeLine ("%s pushax", CrtJsrOrJsl());
         g_getimmed (CF_INT | CF_UNSIGNED | CF_CONST, Size, 0);
-        AddCodeLine ("%s %s", JsrOrJsl(/*TODO: Figure out what kind of call this is? */ 0), GetLabelName (CF_EXTERNAL, (uintptr_t) "memcpy", 0));
+        AddCodeLine ("%s %s", CrtJsrOrJsl(), GetLabelName (CF_EXTERNAL, (uintptr_t) "memcpy", 0));
     }
 }
 

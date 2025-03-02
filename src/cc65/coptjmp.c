@@ -208,6 +208,7 @@ unsigned OptBranchDist2 (CodeSeg* S)
 
        if ((CPUIsets[CPU] & (CPU_ISET_65SC02 |CPU_ISET_6502DTV)) != 0 && /* CPU has BRA */
            (E->Info & OF_UBRA) != 0                                   && /* is a unconditional branch */
+           E->OPC == OP65_BRA                                         && /* is actually a BRA opcode */
            E->JumpTo == NULL) {                                          /* target is extern */
             /* BRA jumps to external symbol and must be replaced by a JMP on the 65C02 CPU */
             CE_ReplaceOPC (E, OP65_JMP);
@@ -790,6 +791,7 @@ unsigned OptRTL (CodeSeg* S)
             N->OPC == OP65_RTL) {
 
             /* Change the jsl to a jml and use the additional info for a jump */
+            fprintf(stderr, "Optimized to JML\n");
             E->AM = AM65_BRA;
             CE_ReplaceOPC (E, OP65_JML);
 

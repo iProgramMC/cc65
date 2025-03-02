@@ -79,11 +79,11 @@ typedef enum token_t {
     TOK_NORETURN,
     TOK_FASTCALL,
     TOK_CDECL,
+    TOK_LONGFN,
 
     /* Address sizes */
     TOK_FAR,
     TOK_NEAR,
-    TOK_LONGFN,
 
     /* Tokens denoting types */
     TOK_FIRST_TYPE,

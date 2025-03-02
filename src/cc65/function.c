@@ -461,7 +461,7 @@ void NewFunc (SymEntry* Func, FuncDesc* D)
     SymEntry*   Param;
     const Type* RType;          /* Real type used for struct parameters */
     const Type* ReturnType;     /* Return type */
-
+    
     /* Remember this function descriptor used for definition */
     GetFuncDesc (Func->Type)->FuncDef = D;
 
@@ -535,6 +535,13 @@ void NewFunc (SymEntry* Func, FuncDesc* D)
             /* The start-up code doesn't fast-call main(). */
             Func->Type->C |= T_QUAL_CDECL;
         }
+    }
+
+    /* Check if this function is a long one */
+    if (IsLongFnFunc (Func->Type)) {
+        /* TODO: Which one should I set? Heck, I'll set both */
+        Func->Flags |= FF_IS_FAR;
+        CurrentFunc->Flags |= FF_IS_FAR;
     }
 
     /* Allocate code and data segments for this function */

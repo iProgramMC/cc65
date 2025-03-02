@@ -260,6 +260,7 @@ static void SetUseChgInfo (CodeEntry* E, const OPCDesc* D)
                 break;
             case OP65_BRA:
             case OP65_JMP:
+            case OP65_JML:
                 break;
             case OP65_AND:
             case OP65_EOR:
@@ -312,6 +313,7 @@ static void SetUseChgInfo (CodeEntry* E, const OPCDesc* D)
                 E->Chg |= PSTATE_ALL;
                 break;
             case OP65_RTS:
+            case OP65_RTL:
                 break;
             case OP65_STA:
             case OP65_STX:
@@ -2101,6 +2103,7 @@ void CE_GenRegInfo (CodeEntry* E, RegContents* InputRegs)
             break;
 
         case OP65_RTS:
+        case OP65_RTL:
             break;
 
         case OP65_SBC:

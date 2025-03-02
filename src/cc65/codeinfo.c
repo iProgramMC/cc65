@@ -682,7 +682,7 @@ static unsigned GetRegInfo2 (CodeSeg* S,
 
         /* Evaluate the used registers */
         R = E->Use;
-        if (E->OPC == OP65_RTS ||
+        if (E->OPC == OP65_RTS || E->OPC == OP65_RTL ||
             ((E->Info & OF_UBRA) != 0 && E->JumpTo == 0)) {
             /* This instruction will leave the function */
             R |= S->ExitRegs;
@@ -711,7 +711,7 @@ static unsigned GetRegInfo2 (CodeSeg* S,
             break;
         }
 
-        /* If the instruction is an RTS or RTI, we're done */
+        /* If the instruction is an RTS/RTL or RTI, we're done */
         if ((E->Info & OF_RET) != 0) {
             break;
         }

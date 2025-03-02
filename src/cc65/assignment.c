@@ -47,6 +47,8 @@
 #include "symentry.h"
 #include "typecmp.h"
 #include "typeconv.h"
+#include "function.h"
+#include "util.h"
 
 
 
@@ -123,7 +125,7 @@ static void CopyStruct (ExprDesc* LExpr, ExprDesc* RExpr)
         g_getimmed (CF_INT | CF_UNSIGNED | CF_CONST, SizeOf (ltype), 0);
 
         /* Call the memcpy function */
-        g_call (CF_FIXARGC, Func_memcpy, 4);
+        g_call (CF_FIXARGC, Func_memcpy, 4, CrtIsLong());
 
         /* The result is an rvalue referenced in the primary */
         ED_FinalizeRValLoad (LExpr);

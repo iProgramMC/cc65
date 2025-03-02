@@ -301,7 +301,7 @@ static TypeCode OptionalQualifiers (TypeCode Qualifiers, TypeCode Allowed)
                     if (Qualifiers & T_QUAL_LONGFN) {
                         DuplicateQualifier ("longfn");
                     }
-                    Q |= T_QUAL_FAR;
+                    Q |= T_QUAL_LONGFN;
                 } else {
                     goto Done;
                 }
@@ -2158,7 +2158,7 @@ static void DirectDecl (DeclSpec* Spec, Declarator* D, TypeCode* RemQ, declmode_
     /* Read optional function or pointer qualifiers that modify the identifier
     ** or token to the right.
     */
-    TypeCode Qualifiers = *RemQ | OptionalQualifiers (*RemQ, T_QUAL_ADDRSIZE | T_QUAL_CCONV);
+    TypeCode Qualifiers = *RemQ | OptionalQualifiers (*RemQ, T_QUAL_ADDRSIZE | T_QUAL_CCONV | T_QUAL_LONGFN);
 
     /* Pointer to something */
     if (CurTok.Tok == TOK_STAR) {
@@ -2223,7 +2223,7 @@ static void DirectDecl (DeclSpec* Spec, Declarator* D, TypeCode* RemQ, declmode_
             Nested = 1;
         } else {
             /* Check for qualifiers */
-            TypeCode Q = OptionalQualifiers (T_QUAL_NONE, T_QUAL_ADDRSIZE | T_QUAL_CCONV);
+            TypeCode Q = OptionalQualifiers (T_QUAL_NONE, T_QUAL_ADDRSIZE | T_QUAL_CCONV | T_QUAL_LONGFN);
 
             if (Q != T_QUAL_NONE) {
                 Qualifiers |= Q;

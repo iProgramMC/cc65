@@ -1107,6 +1107,21 @@ int IsFastcallFunc (const Type* T)
 
 
 
+int IsLongFnFunc (const Type* T)
+/* Return true if this is a function type or pointer to function type by
+** __longfn__ calling convention flag.
+** Check fails if the type is not a function or a pointer to function.
+*/
+{
+    if (GetUnqualRawTypeCode (T) == T_PTR) {
+        /* Pointer to function */
+        ++T;
+    }
+    return IsQualLongFn(T);
+}
+
+
+
 FuncDesc* GetFuncDesc (const Type* T)
 /* Get the FuncDesc pointer from a function or pointer-to-function type */
 {
@@ -1629,6 +1644,13 @@ int GetQualifierTypeCodeNameBuf (struct StrBuf* S, TypeCode Qual, TypeCode Ignor
             SB_AppendChar (S, ' ');
         }
         SB_AppendStr (S, "__fastcall__");
+        ++Count;
+    }
+    if (Qual & T_QUAL_LONGFN) {
+        if (Count > 0) {
+            SB_AppendChar (S, ' ');
+        }
+        SB_AppendStr (S, "__longfn__");
         ++Count;
     }
     if (Qual & T_QUAL_CDECL) {

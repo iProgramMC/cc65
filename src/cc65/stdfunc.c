@@ -254,7 +254,7 @@ static void StdFunc_memcpy (FuncDesc* F attribute ((unused)), ExprDesc* Expr)
     DoDeferred (SQP_KEEP_EAX, &Arg3.Expr);
 
     /* Emit the actual function call. This will also cleanup the stack. */
-    g_call (CF_FIXARGC, Func_memcpy, ParamSize);
+    g_call (CF_FIXARGC, Func_memcpy, ParamSize, CrtIsLong());
 
     if (ED_IsConstAbsInt (&Arg3.Expr) && Arg3.Expr.IVal == 0) {
 
@@ -604,7 +604,7 @@ static void StdFunc_memset (FuncDesc* F attribute ((unused)), ExprDesc* Expr)
     DoDeferred (SQP_KEEP_EAX, &Arg3.Expr);
 
     /* Emit the actual function call. This will also cleanup the stack. */
-    g_call (CF_FIXARGC, MemSet? Func_memset : Func___bzero, ParamSize);
+    g_call (CF_FIXARGC, MemSet? Func_memset : Func___bzero, ParamSize, CrtIsLong());
 
     if (ED_IsConstAbsInt (&Arg3.Expr) && Arg3.Expr.IVal == 0) {
 
@@ -816,7 +816,7 @@ static void StdFunc_strcmp (FuncDesc* F attribute ((unused)), ExprDesc* Expr)
     DoDeferred (SQP_KEEP_EAX, &Arg2.Expr);
 
     /* Emit the actual function call. This will also cleanup the stack. */
-    g_call (CF_FIXARGC, Func_strcmp, ParamSize);
+    g_call (CF_FIXARGC, Func_strcmp, ParamSize, CrtIsLong());
 
     /* Get the element counts of the arguments. Then get the larger of the
     ** two into ECount1. This removes FLEXIBLE and UNSPECIFIED automatically
@@ -1011,7 +1011,7 @@ static void StdFunc_strcpy (FuncDesc* F attribute ((unused)), ExprDesc* Expr)
     DoDeferred (SQP_KEEP_EAX, &Arg2.Expr);
 
     /* Emit the actual function call. This will also cleanup the stack. */
-    g_call (CF_FIXARGC, Func_strcpy, ParamSize);
+    g_call (CF_FIXARGC, Func_strcpy, ParamSize, CrtIsLong());
 
     /* Get the element count of argument 1 if it is an array */
     ECount = ArrayElementCount (&Arg1);

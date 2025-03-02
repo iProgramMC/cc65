@@ -1150,9 +1150,9 @@ static void FunctionCall (ExprDesc* Expr)
 
             SB_Done (&S);
 
-            g_call (CG_CallFlags (Expr->Type), Expr->Sym->V.F.WrappedCall->Name, ArgSize);
+            g_call (CG_CallFlags (Expr->Type), Expr->Sym->V.F.WrappedCall->Name, ArgSize, Expr->Type->C & T_QUAL_LONGFN);
         } else {
-            g_call (CG_CallFlags (Expr->Type), (const char*) Expr->Name, ArgSize);
+            g_call (CG_CallFlags (Expr->Type), (const char*) Expr->Name, ArgSize, Expr->Type->C & T_QUAL_LONGFN);
         }
 
     }

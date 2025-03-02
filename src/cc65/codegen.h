@@ -402,7 +402,7 @@ void g_swap (unsigned flags);
 ** of *both* values (must have same size).
 */
 
-void g_call (unsigned Flags, const char* Label, unsigned ArgSize);
+void g_call (unsigned Flags, const char* Label, unsigned ArgSize, int FnIsLong);
 /* Call the specified subroutine name */
 
 void g_callind (unsigned Flags, unsigned ArgSize, int Offs);
