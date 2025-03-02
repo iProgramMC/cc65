@@ -248,6 +248,14 @@ int F_IsOldStyle (const Function* F)
 
 
 
+int F_IsFar (const Function* F)
+/* Return true if this is an old style (K&R) function */
+{
+    return (F->Flags & FF_IS_FAR) != 0;
+}
+
+
+
 int F_HasOldStyleIntRet (const Function* F)
 /* Return true if this is an old style (K&R) function with an implicit int return */
 {
@@ -656,7 +664,7 @@ void NewFunc (SymEntry* Func, FuncDesc* D)
     }
 
     /* Generate the exit code */
-    g_leave (CleanupOnExit);
+    g_leave (CleanupOnExit, F_IsFar(CurrentFunc));
 
     /* Emit references to imports/exports */
     EmitExternals ();

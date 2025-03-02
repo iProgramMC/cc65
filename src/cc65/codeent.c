@@ -958,7 +958,7 @@ int CE_UseLoadFlags (CodeEntry* E)
     }
 
     /* Call of a boolean transformer routine will also use the flags */
-    if (E->OPC == OP65_JSR) {
+    if (E->OPC == OP65_JSR || E->OPC == OP65_JSL) {
         /* Get the condition that is evaluated and check it */
         switch (FindBoolCmpCond (E->Arg)) {
             case CMP_EQ:
@@ -1742,6 +1742,7 @@ void CE_GenRegInfo (CodeEntry* E, RegContents* InputRegs)
             break;
 
         case OP65_JSR:
+        case OP65_JSL:
             Out->ZNRegs = ZNREG_NONE;
 
             /* Get the code info for the function */

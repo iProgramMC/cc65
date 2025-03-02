@@ -296,6 +296,17 @@ static TypeCode OptionalQualifiers (TypeCode Qualifiers, TypeCode Allowed)
                 }
                 break;
 
+            case TOK_LONGFN:
+                if (Allowed & T_QUAL_LONGFN) {
+                    if (Qualifiers & T_QUAL_LONGFN) {
+                        DuplicateQualifier ("longfn");
+                    }
+                    Q |= T_QUAL_FAR;
+                } else {
+                    goto Done;
+                }
+                break;
+
             case TOK_FASTCALL:
                 if (Allowed & T_QUAL_FASTCALL) {
                     if (Qualifiers & T_QUAL_FASTCALL) {

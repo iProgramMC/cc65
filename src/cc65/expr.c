@@ -40,6 +40,7 @@
 #include "typecmp.h"
 #include "typeconv.h"
 #include "expr.h"
+#include "util.h"
 
 
 
@@ -713,7 +714,7 @@ void DoDeferred (unsigned Flags, ExprDesc* Expr)
         AddCodeLine ("sta regsave");
         AddCodeLine ("stx regsave+1");
     } else if (Size == 3 || Size == 4) {
-        AddCodeLine("jsr saveeax");
+        AddCodeLine ("%s saveeax", CrtJsrOrJsl());
     } else if (Size > 4) {
         Error ("Unsupported deferred operand size: %u", Size);
     }
@@ -741,7 +742,7 @@ void DoDeferred (unsigned Flags, ExprDesc* Expr)
         AddCodeLine ("lda regsave");
         AddCodeLine ("ldx regsave+1");
     } else if (Size == 3 || Size == 4) {
-        AddCodeLine ("jsr resteax");
+        AddCodeLine ("%s resteax", CrtJsrOrJsl());
     }
 
     /* Restore the regs/processor flags around the inc/dec */

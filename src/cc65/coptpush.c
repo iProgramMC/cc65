@@ -37,6 +37,7 @@
 #include "codeent.h"
 #include "codeinfo.h"
 #include "coptpush.h"
+#include "codeoptutil.h"
 
 
 
@@ -93,7 +94,7 @@ unsigned OptPush1 (CodeSeg* S)
             CS_InsertEntry (S, X, I+2);
 
             /* jsr pushwysp */
-            X = NewCodeEntry (OP65_JSR, AM65_ABS, "pushwysp", 0, L[1]->LI);
+            X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, "pushwysp", 0, L[1]->LI);
             CS_InsertEntry (S, X, I+3);
 
             /* pushax sets Y = 0 and following code might rely on this */
@@ -161,7 +162,7 @@ unsigned OptPush2 (CodeSeg* S)
             CodeEntry* X;
 
             /* jsr pushwidx */
-            X = NewCodeEntry (OP65_JSR, AM65_ABS, "pushwidx", 0, L[1]->LI);
+            X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, "pushwidx", 0, L[1]->LI);
             CS_InsertEntry (S, X, I+2);
 
             /* Delete the old code */

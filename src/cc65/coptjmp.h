@@ -56,9 +56,11 @@ unsigned OptBranchDist2 (CodeSeg* S);
 /* If BRA points to an external symbol, change it to JMP */
 
 unsigned OptRTSJumps1 (CodeSeg* S);
+unsigned OptRTLJumps1 (CodeSeg* S);
 /* Replace jumps to RTS by RTS */
 
 unsigned OptRTSJumps2 (CodeSeg* S);
+unsigned OptRTLJumps2 (CodeSeg* S);
 /* Replace long conditional jumps to RTS */
 
 unsigned OptDeadJumps (CodeSeg* S);
@@ -78,6 +80,7 @@ unsigned OptJumpCascades (CodeSeg* S);
 */
 
 unsigned OptRTS (CodeSeg* S);
+unsigned OptRTL (CodeSeg* S);
 /* Optimize subroutine calls followed by an RTS. The subroutine call will get
 ** replaced by a jump. Don't bother to delete the RTS if it does not have a
 ** label, the dead code elimination should take care of it.

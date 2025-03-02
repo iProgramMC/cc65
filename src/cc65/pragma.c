@@ -86,6 +86,7 @@ typedef enum {
     PRAGMA_WRAPPED_CALL,
     PRAGMA_WRITABLE_STRINGS,
     PRAGMA_ZPSYM,
+    PRAGMA_LONGCRT,
 } pragma_t;
 
 /* Pragma table */
@@ -127,6 +128,7 @@ static const struct Pragma {
     { "writable-strings",       PRAGMA_WRITABLE_STRINGS   },
     { "writable_strings",       PRAGMA_WRITABLE_STRINGS   },
     { "zpsym",                  PRAGMA_ZPSYM              },
+    { "longcrt",                PRAGMA_LONGCRT            },
 };
 #define PRAGMA_COUNT    (sizeof (Pragmas) / sizeof (Pragmas[0]))
 
@@ -1018,6 +1020,10 @@ static void ParsePragmaString (void)
         case PRAGMA_ZPSYM:
             /* PES_IMM is the only sensible option */
             StringPragma (PES_IMM, &B, MakeZPSym);
+            break;
+            
+        case PRAGMA_LONGCRT:
+            FlagPragma (PES_STMT, Pragma, &B, &CRTIsLong);
             break;
 
         default:

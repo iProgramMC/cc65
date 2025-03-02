@@ -693,7 +693,7 @@ unsigned OptPtrLoad7 (CodeSeg* S)
         L[0] = CS_GetEntry (S, I);
 
         /* Check for the sequence */
-        if (L[0]->OPC == OP65_JSR                               &&
+        if ((L[0]->OPC == OP65_JSR || L[0]->OPC == OP65_JSL)    &&
             (strcmp (L[0]->Arg, "aslax1") == 0          ||
              strcmp (L[0]->Arg, "shlax1") == 0)                 &&
             CS_GetEntries (S, L+1, I+1, 9)                      &&
@@ -1598,7 +1598,7 @@ unsigned OptPtrLoad19 (CodeSeg* S)
             L[1]->OPC == OP65_AND                               &&
             L[1]->AM == AM65_IMM                                &&
             CE_HasNumArg (L[1]) && L[1]->Num <= 0x7F            &&
-            L[2]->OPC == OP65_JSR                               &&
+            (L[2]->OPC == OP65_JSR || L[2]->OPC == OP65_JSL)    &&
             L[3]->OPC == OP65_CLC                               &&
             L[4]->OPC == OP65_ADC                               &&
             L[5]->OPC == OP65_TAY                               &&

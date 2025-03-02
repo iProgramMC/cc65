@@ -1,3 +1,17 @@
+#### iProgramInCpp's changes:
+
+- Add `__longfn__`, mark a function with this to tell the compiler it's to
+  generate `jsl`/`jml` and `rtl` when calling into or returning from it.
+  
+  Example: `int __longfn__ __fastcall__ something();`
+
+- Add `longcrt` pragma to mark the entire C runtime as long.  If this is
+  set, then each C runtime function will be called using `jsl`/`jml` instead
+  of `jsr`/`jmp`.
+  
+  Example: `#pragma longcrt(true)`
+
+
 The cc65 cross-compiler suite
 =============================
 

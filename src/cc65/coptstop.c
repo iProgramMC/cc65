@@ -157,7 +157,7 @@ static unsigned Opt_toseqax_tosneax (StackOpData* D, const char* BoolTransformer
     ** insn. This is needed for all variants. Other insns are inserted *before*
     ** the call.
     */
-    X = NewCodeEntry (OP65_JSR, AM65_ABS, BoolTransformer, 0, D->OpEntry->LI);
+    X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, BoolTransformer, 0, D->OpEntry->LI);
     InsertEntry (D, X, D->OpIndex + 1);
     L = CS_GenLabel (D->Code, X);
 
@@ -318,7 +318,7 @@ static unsigned Opt_tosshift (StackOpData* D, const char* Name)
     }
 
     /* jsr shlaxy/aslaxy/whatever */
-    X = NewCodeEntry (OP65_JSR, AM65_ABS, Name, 0, D->OpEntry->LI);
+    X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, Name, 0, D->OpEntry->LI);
     InsertEntry (D, X, D->IP++);
 
     /* Remove the push and the call to the shift function */
@@ -967,7 +967,7 @@ static unsigned Opt_tosugtax (StackOpData* D)
     InsertEntry (D, X, D->IP++);
 
     /* Transform to boolean */
-    X = NewCodeEntry (OP65_JSR, AM65_ABS, "boolugt", 0, D->OpEntry->LI);
+    X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, "boolugt", 0, D->OpEntry->LI);
     InsertEntry (D, X, D->IP++);
 
     /* Rhs load entries must be removed */
@@ -1014,7 +1014,7 @@ static unsigned Opt_tosuleax (StackOpData* D)
     InsertEntry (D, X, D->IP++);
 
     /* Transform to boolean */
-    X = NewCodeEntry (OP65_JSR, AM65_ABS, "boolule", 0, D->OpEntry->LI);
+    X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, "boolule", 0, D->OpEntry->LI);
     InsertEntry (D, X, D->IP++);
 
     /* Rhs load entries must be removed */
@@ -1049,7 +1049,7 @@ static unsigned Opt_tosultax (StackOpData* D)
     AddOpHigh (D, OP65_SBC, &D->Rhs, 0);
 
     /* Transform to boolean */
-    X = NewCodeEntry (OP65_JSR, AM65_ABS, "boolult", 0, D->OpEntry->LI);
+    X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, "boolult", 0, D->OpEntry->LI);
     InsertEntry (D, X, D->IP++);
 
     /* Rhs load entries must be removed */
@@ -1221,7 +1221,7 @@ static unsigned Opt_a_toscmpbool (StackOpData* D, const char* BoolTransformer)
     /* Create a call to the boolean transformer function. This is needed for all
     ** variants.
     */
-    X = NewCodeEntry (OP65_JSR, AM65_ABS, BoolTransformer, 0, D->OpEntry->LI);
+    X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, BoolTransformer, 0, D->OpEntry->LI);
     InsertEntry (D, X, D->IP++);
 
     /* Remove the push and the call to the TOS function */
@@ -1293,7 +1293,7 @@ static unsigned Opt_a_tosicmp (StackOpData* D)
                 InsertEntry (D, X, D->IP++);
 
                 /* cmp src,y OR cmp (sp),y */
-                if (D->Rhs.A.LoadEntry->OPC == OP65_JSR) {
+                if (D->Rhs.A.LoadEntry->OPC == OP65_JSR || D->Rhs.A.LoadEntry->OPC == OP65_JSL) {
                     /* opc (sp),y */
                     X = NewCodeEntry (OP65_CMP, AM65_ZP_INDY, "sp", 0, D->OpEntry->LI);
                 } else {
@@ -1939,7 +1939,7 @@ unsigned OptStackOps (CodeSeg* S)
                     Data.Rhs.X.ChgIndex = I;
                     Data.Rhs.Y.ChgIndex = I;
                 }
-                if (E->OPC == OP65_JSR) {
+                if (E->OPC == OP65_JSR || E->OPC == OP65_JSL) {
                     /* Subroutine call: Check if this is one of the functions,
                     ** we're going to replace.
                     */

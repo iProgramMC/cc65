@@ -49,6 +49,14 @@ int PowerOf2 (unsigned long Val);
 ** power of two.
 */
 
+const char* JsrOrJsl(int IsLong);
+/* If IsLong is non-zero, return "jsl". Else, return "jsr". */
+
+const char* CrtJsrOrJsl(void);
+/* If the CRT is marked as long, return "jsl". Else, return "jsr". */
+
+int CrtIsLong(void);
+/* Return non-zero if the CRT is marked long, else return 0. */
 
 
 /* End of util.h */

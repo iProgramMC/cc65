@@ -1729,7 +1729,7 @@ unsigned OptSignExtended (CodeSeg* S)
             GetBranchCond (L[1]->OPC) == BC_PL      &&
             RegValIsKnown (L[2]->RI->Out.RegX)      &&
             L[2]->RI->Out.RegX == 0xFF              &&
-            L[2]->OPC != OP65_JSR                   &&
+            (L[2]->OPC != OP65_JSR && L[2]->OPC != OP65_JSL) &&
             (L[2]->Chg & REG_AXY) == REG_X) {
 
             /* We find a sign extention */

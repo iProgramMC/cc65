@@ -44,8 +44,6 @@
 #include "codeoptutil.h"
 #include "error.h"
 
-
-
 /*****************************************************************************/
 /*                            Load tracking code                             */
 /*****************************************************************************/
@@ -301,7 +299,7 @@ static int Affected (LoadRegInfo* LRI, const CodeEntry* E)
         }
     }
 
-    if (E->OPC == OP65_JSR) {
+    if (E->OPC == OP65_JSR || E->OPC == OP65_JSL) {
         /* Try to know about the function */
         fncls = GetFuncInfo (E->Arg, &Use, &Chg);
         if (fncls == FNCLS_BUILTIN) {
@@ -836,7 +834,7 @@ void AdjustStackOffset (StackOpData* D, unsigned Offs)
         int Correction = 0;
         if ((E->Use & SLV_IND) == SLV_IND) {
 
-            if (E->OPC != OP65_JSR) {
+            if (E->OPC != OP65_JSR && E->OPC != OP65_JSL) {
                 /* Check against some things that should not happen */
                 CHECK (E->AM == AM65_ZP_INDY && E->RI->In.RegY >= (short) Offs);
                 CHECK (strcmp (E->Arg, "sp") == 0);
@@ -1055,7 +1053,7 @@ void AddOpLow (StackOpData* D, opc_t OPC, LoadInfo* LI)
             }
             InsertEntry (D, X, D->IP++);
 
-            if (LI->A.LoadEntry->OPC == OP65_JSR) {
+            if (LI->A.LoadEntry->OPC == OP65_JSR || LI->A.LoadEntry->OPC == OP65_JSL) {
                 /* opc (sp),y */
                 X = NewCodeEntry (OPC, AM65_ZP_INDY, "sp", 0, D->OpEntry->LI);
             } else {
@@ -1118,7 +1116,7 @@ void AddOpHigh (StackOpData* D, opc_t OPC, LoadInfo* LI, int KeepResult)
             }
             InsertEntry (D, X, D->IP++);
 
-            if (LI->X.LoadEntry->OPC == OP65_JSR) {
+            if (LI->X.LoadEntry->OPC == OP65_JSR || LI->A.LoadEntry->OPC == OP65_JSL) {
                 /* opc (sp),y */
                 X = NewCodeEntry (OPC, AM65_ZP_INDY, "sp", 0, D->OpEntry->LI);
             } else {
@@ -1569,7 +1567,7 @@ static int BackupAAt (CodeSeg* S, BackupInfo* B, int Idx, Collection* Indices, i
 
         case BU_SP:
             if ((B->ZPUsage & REG_Y) == 0) {
-                X = NewCodeEntry (OP65_JSR, AM65_ABS, "pusha", 0, E->LI);
+                X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, "pusha", 0, E->LI);
                 CS_InsertEntry (S, X, Idx++);
                 break;
             }
@@ -1645,7 +1643,7 @@ static int BackupXAt (CodeSeg* S, BackupInfo* B, int Idx, Collection* Indices, i
             if ((B->ZPUsage & REG_A) == 0) {
                 X = NewCodeEntry (OP65_TXA, AM65_IMP, 0, 0, E->LI);
                 CS_InsertEntry (S, X, Idx++);
-                X = NewCodeEntry (OP65_JSR, AM65_ABS, "pusha", 0, E->LI);
+                X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, "pusha", 0, E->LI);
                 CS_InsertEntry (S, X, Idx++);
                 break;
             }
@@ -1724,7 +1722,7 @@ static int BackupYAt (CodeSeg* S, BackupInfo* B, int Idx, Collection* Indices, i
             if ((B->ZPUsage & REG_A) == 0) {
                 X = NewCodeEntry (OP65_TYA, AM65_IMP, 0, 0, E->LI);
                 CS_InsertEntry (S, X, Idx++);
-                X = NewCodeEntry (OP65_JSR, AM65_ABS, "pusha", 0, E->LI);
+                X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, "pusha", 0, E->LI);
                 CS_InsertEntry (S, X, Idx++);
                 break;
             }
@@ -1812,7 +1810,7 @@ static int BackupAXAt (CodeSeg* S, BackupInfo* B, int Idx, Collection* Indices, 
 
         case BU_SP:
             if ((B->ZPUsage & REG_Y) == 0) {
-                X = NewCodeEntry (OP65_JSR, AM65_ABS, "pushax", 0, E->LI);
+                X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, "pushax", 0, E->LI);
                 CS_InsertEntry (S, X, Idx++);
                 break;
             }
@@ -1914,11 +1912,11 @@ static int BackupAXYAt (CodeSeg* S, BackupInfo* B, int Idx, Collection* Indices,
 
         case BU_SP:
             if ((B->ZPUsage & REG_AY) == 0) {
-                X = NewCodeEntry (OP65_JSR, AM65_ABS, "pushax", 0, E->LI);
+                X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, "pushax", 0, E->LI);
                 CS_InsertEntry (S, X, Idx++);
                 X = NewCodeEntry (OP65_TYA, AM65_IMP, 0, 0, E->LI);
                 CS_InsertEntry (S, X, Idx++);
-                X = NewCodeEntry (OP65_JSR, AM65_ABS, "pusha", 0, E->LI);
+                X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, "pusha", 0, E->LI);
                 CS_InsertEntry (S, X, Idx++);
                 break;
             }
@@ -2074,7 +2072,7 @@ int RestoreABefore (CodeSeg* S, BackupInfo* B, int Idx, Collection* Indices)
 
     case BU_SP:
         if ((B->ZPUsage & REG_Y) == 0) {
-            X = NewCodeEntry (OP65_JSR, AM65_ABS, "popa", 0, E->LI);
+            X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, "popa", 0, E->LI);
             CS_InsertEntry (S, X, Idx++);
             break;
         }
@@ -2152,7 +2150,7 @@ int RestoreXBefore (CodeSeg* S, BackupInfo* B, int Idx, Collection* Indices)
 
     case BU_SP:
         if ((B->ZPUsage & REG_A) == 0) {
-            X = NewCodeEntry (OP65_JSR, AM65_ABS, "popa", 0, E->LI);
+            X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, "popa", 0, E->LI);
             CS_InsertEntry (S, X, Idx++);
             X = NewCodeEntry (OP65_TAX, AM65_IMP, 0, 0, E->LI);
             CS_InsertEntry (S, X, Idx++);
@@ -2232,7 +2230,7 @@ int RestoreYBefore (CodeSeg* S, BackupInfo* B, int Idx, Collection* Indices)
 
     case BU_SP:
         if ((B->ZPUsage & REG_A) == 0) {
-            X = NewCodeEntry (OP65_JSR, AM65_ABS, "popa", 0, E->LI);
+            X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, "popa", 0, E->LI);
             CS_InsertEntry (S, X, Idx++);
             X = NewCodeEntry (OP65_TAY, AM65_IMP, 0, 0, E->LI);
             CS_InsertEntry (S, X, Idx++);
@@ -2305,7 +2303,7 @@ int RestoreAXBefore (CodeSeg* S, BackupInfo* B, int Idx, Collection* Indices)
 
     case BU_SP:
         if ((B->ZPUsage & REG_Y) == 0) {
-            X = NewCodeEntry (OP65_JSR, AM65_ABS, "popax", 0, E->LI);
+            X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, "popax", 0, E->LI);
             CS_InsertEntry (S, X, Idx++);
             break;
         }
@@ -2382,11 +2380,11 @@ int RestoreAXYBefore (CodeSeg* S, BackupInfo* B, int Idx, Collection* Indices)
         break;
 
     case BU_SP:
-        X = NewCodeEntry (OP65_JSR, AM65_ABS, "popa", 0, E->LI);
+        X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, "popa", 0, E->LI);
         CS_InsertEntry (S, X, Idx++);
         X = NewCodeEntry (OP65_TAY, AM65_IMP, 0, 0, E->LI);
         CS_InsertEntry (S, X, Idx++);
-        X = NewCodeEntry (OP65_JSR, AM65_ABS, "popax", 0, E->LI);
+        X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, "popax", 0, E->LI);
         CS_InsertEntry (S, X, Idx++);
         break;
 
@@ -2423,7 +2421,7 @@ int BackupArgAfter (CodeSeg* S, BackupInfo* B, int Idx, const CodeEntry* E, Coll
     SB_Init (&DstArg);
 
     /* We only recognize opc with an arg for now, as well as a special case for ldaxysp */
-    if ((E->OPC != OP65_JSR || strcmp (E->Arg, "ldaxysp") == 0) &&
+    if (((E->OPC != OP65_JSR && E->OPC != OP65_JSL) || strcmp (E->Arg, "ldaxysp") == 0) &&
         E->AM != AM65_BRA) {
         /* Get size of the arg */
         if ((E->Info & OF_LBRA) != 0 || strcmp (E->Arg, "ldaxysp") == 0) {
@@ -2503,7 +2501,7 @@ int BackupArgAfter (CodeSeg* S, BackupInfo* B, int Idx, const CodeEntry* E, Coll
                 X = NewCodeEntry (OP65_LDA, E->AM, E->Arg, 0, E->LI);
                 CS_InsertEntry (S, X, ++Idx);
                 if (ArgSize != BU_B16) {
-                    X = NewCodeEntry (OP65_JSR, AM65_ABS, "pusha", 0, E->LI);
+                    X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, "pusha", 0, E->LI);
                     CS_InsertEntry (S, X, ++Idx);
                 } else {
                     SB_AppendStr (&SrcArg, E->Arg);
@@ -2513,22 +2511,22 @@ int BackupArgAfter (CodeSeg* S, BackupInfo* B, int Idx, const CodeEntry* E, Coll
                         if (E->AM == AM65_ZP) {
                             X = NewCodeEntry (OP65_LDX, E->AM, SB_GetConstBuf (&SrcArg), 0, E->LI);
                             CS_InsertEntry (S, X, ++Idx);
-                            X = NewCodeEntry (OP65_JSR, AM65_ABS, "pushax", 0, E->LI);
+                            X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, "pushax", 0, E->LI);
                             CS_InsertEntry (S, X, ++Idx);
                         } else {
                             X = NewCodeEntry (OP65_LDA, E->AM, SB_GetConstBuf (&SrcArg), 0, E->LI);
                             CS_InsertEntry (S, X, ++Idx);
                             X = NewCodeEntry (OP65_TAX, AM65_IMP, 0, 0, E->LI);
                             CS_InsertEntry (S, X, ++Idx);
-                            X = NewCodeEntry (OP65_JSR, AM65_ABS, "pushax", 0, E->LI);
+                            X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, "pushax", 0, E->LI);
                             CS_InsertEntry (S, X, ++Idx);
                         }
                     } else {
-                        X = NewCodeEntry (OP65_JSR, AM65_ABS, "pusha", 0, E->LI);
+                        X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, "pusha", 0, E->LI);
                         CS_InsertEntry (S, X, ++Idx);
                         X = NewCodeEntry (OP65_LDA, AM65_ZP, SB_GetConstBuf (&DstArg), 0, E->LI);
                         CS_InsertEntry (S, X, ++Idx);
-                        X = NewCodeEntry (OP65_JSR, AM65_ABS, "pusha", 0, E->LI);
+                        X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, "pusha", 0, E->LI);
                         CS_InsertEntry (S, X, ++Idx);
                     }
                 }
@@ -2541,7 +2539,7 @@ int BackupArgAfter (CodeSeg* S, BackupInfo* B, int Idx, const CodeEntry* E, Coll
             /* Done */
             return 1;
         }
-    } else if (E->OPC == OP65_JSR) {
+    } else if (E->OPC == OP65_JSR || E->OPC == OP65_JSL) {
         /* For function calls we load their arguments instead */
         GetFuncInfo (E->Arg, &Use, &Chg);
         if ((Use & ~REG_AXY) == 0) {
@@ -2592,7 +2590,7 @@ static int LoadAAt (CodeSeg* S, int Idx, const LoadRegInfo* LRI, Collection* Ind
     O = CS_GetEntry (S, OldIdx);
 
     /* We only recognize opc with an arg for now, as well as a special case for ldaxysp */
-    if ((E->OPC != OP65_JSR || strcmp (E->Arg, "ldaxysp") == 0) &&
+    if (((E->OPC != OP65_JSR || E->OPC != OP65_JSL) || strcmp (E->Arg, "ldaxysp") == 0) &&
         E->AM != AM65_BRA && E->AM != AM65_IMP) {
         if (E->Size != 1 && E->AM != AM65_IMP) {
 
@@ -2612,7 +2610,7 @@ static int LoadAAt (CodeSeg* S, int Idx, const LoadRegInfo* LRI, Collection* Ind
                 Success = 1;
             }
         }
-    } else if (E->OPC == OP65_JSR) {
+    } else if (E->OPC == OP65_JSR || E->OPC == OP65_JSL) {
 
         /* For other function calls we load their arguments instead */
         GetFuncInfo (E->Arg, &Use, &Chg);
@@ -2675,7 +2673,7 @@ static int LoadXAt (CodeSeg* S, int Idx, const LoadRegInfo* LRI, Collection* Ind
     O = CS_GetEntry (S, OldIdx);
 
     /* We only recognize opc with an arg for now, as well as a special case for ldaxysp */
-    if ((E->OPC != OP65_JSR || strcmp (E->Arg, "ldaxysp") == 0) &&
+    if (((E->OPC != OP65_JSR && E->OPC != OP65_JSL) || strcmp (E->Arg, "ldaxysp") == 0) &&
         E->AM != AM65_BRA && E->AM != AM65_IMP) {
         if (E->Size != 1 && E->AM != AM65_IMP) {
 
@@ -2706,7 +2704,7 @@ static int LoadXAt (CodeSeg* S, int Idx, const LoadRegInfo* LRI, Collection* Ind
                 Success = 1;
             }
         }
-    } else if (E->OPC == OP65_JSR) {
+    } else if (E->OPC == OP65_JSR || E->OPC == OP65_JSL) {
         /* For function calls we load their arguments instead */
         GetFuncInfo (E->Arg, &Use, &Chg);
         if ((Use & ~REG_AXY) == 0) {
@@ -2774,7 +2772,7 @@ static int LoadYAt (CodeSeg* S, int Idx, const LoadRegInfo* LRI, Collection* Ind
     O = CS_GetEntry (S, OldIdx);
 
     /* We only recognize opc with an arg for now, as well as a special case for ldaxysp */
-    if ((E->OPC != OP65_JSR || strcmp (E->Arg, "ldaxysp") == 0) &&
+    if (((E->OPC != OP65_JSR && E->OPC != OP65_JSL) || strcmp (E->Arg, "ldaxysp") == 0) &&
         E->AM != AM65_BRA && E->AM != AM65_IMP) {
         if (E->Size != 1 && E->AM != AM65_IMP) {
 
@@ -2799,7 +2797,7 @@ static int LoadYAt (CodeSeg* S, int Idx, const LoadRegInfo* LRI, Collection* Ind
                 Success = 1;
             }
         }
-    } else if (E->OPC == OP65_JSR) {
+    } else if (E->OPC == OP65_JSR || E->OPC == OP65_JSL) {
         /* For function calls we load their arguments instead */
         GetFuncInfo (E->Arg, &Use, &Chg);
         if ((Use & ~REG_AXY) == 0) {

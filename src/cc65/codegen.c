@@ -501,13 +501,13 @@ void g_enter (unsigned flags, unsigned argsize)
         funcargs = argsize;
     } else {
         funcargs = -1;
-        AddCodeLine ("jsr enter");
+        AddCodeLine ("%s enter", CrtJsrOrJsl());
     }
 }
 
 
 
-void g_leave (int DoCleanup)
+void g_leave (int DoCleanup, int FunctionIsLong)
 /* Function epilogue */
 {
     /* In the main function in cc65 mode nothing has to be dropped because
@@ -528,22 +528,25 @@ void g_leave (int DoCleanup)
             /* We've a stack frame to drop */
             if (ToDrop > 255) {
                 g_drop (ToDrop);            /* Inlines the code */
-                AddCodeLine ("jsr leave");
+                AddCodeLine ("%s leave", CrtJsrOrJsl());
             } else {
                 AddCodeLine ("ldy #$%02X", ToDrop);
-                AddCodeLine ("jsr leavey");
+                AddCodeLine ("%s leavey", CrtJsrOrJsl());
             }
 
         } else {
 
             /* Nothing to drop */
-            AddCodeLine ("jsr leave");
+            AddCodeLine ("%s leave", CrtJsrOrJsl());
 
         }
     }
 
     /* Add the final rts */
-    AddCodeLine ("rts");
+    if (FunctionIsLong)
+        AddCodeLine ("rtl");
+    else
+        AddCodeLine ("rts");
 }
 
 
@@ -567,7 +570,7 @@ void g_swap_regvars (int StackOffs, int RegOffs, unsigned Bytes)
 
         if (IS_Get (&CodeSizeFactor) < 165) {
             AddCodeLine ("ldx #$%02X", RegOffs & 0xFF);
-            AddCodeLine ("jsr regswap1");
+            AddCodeLine ("%s regswap1", CrtJsrOrJsl());
         } else {
             AddCodeLine ("lda (sp),y");
             AddCodeLine ("ldx regbank%+d", RegOffs);
@@ -579,13 +582,13 @@ void g_swap_regvars (int StackOffs, int RegOffs, unsigned Bytes)
     } else if (Bytes == 2) {
 
         AddCodeLine ("ldx #$%02X", RegOffs & 0xFF);
-        AddCodeLine ("jsr regswap2");
+        AddCodeLine ("%s regswap2", CrtJsrOrJsl());
 
     } else {
 
         AddCodeLine ("ldx #$%02X", RegOffs & 0xFF);
         AddCodeLine ("lda #$%02X", Bytes & 0xFF);
-        AddCodeLine ("jsr regswap");
+        AddCodeLine ("%s regswap", CrtJsrOrJsl());
     }
 }
 
@@ -598,13 +601,13 @@ void g_save_regvars (int RegOffs, unsigned Bytes)
     if (Bytes == 1) {
 
         AddCodeLine ("lda regbank%+d", RegOffs);
-        AddCodeLine ("jsr pusha");
+        AddCodeLine ("%s pusha", CrtJsrOrJsl());
 
     } else if (Bytes == 2) {
 
         AddCodeLine ("lda regbank%+d", RegOffs);
         AddCodeLine ("ldx regbank%+d", RegOffs+1);
-        AddCodeLine ("jsr pushax");
+        AddCodeLine ("%s pushax", CrtJsrOrJsl());
 
     } else {
 
@@ -856,14 +859,14 @@ void g_getlocal (unsigned Flags, int Offs)
                 AddCodeLine ("dey");
                 AddCodeLine ("ora (sp),y");
             } else {
-                AddCodeLine ("jsr ldaxysp");
+                AddCodeLine ("%s ldaxysp", CrtJsrOrJsl());
             }
             break;
 
         case CF_LONG:
             CheckLocalOffs (Offs + 3);
             AddCodeLine ("ldy #$%02X", (unsigned char) (Offs+3));
-            AddCodeLine ("jsr ldeaxysp");
+            AddCodeLine ("%s ldeaxysp", CrtJsrOrJsl());
             if (Flags & CF_TEST) {
                 g_test (Flags);
             }
@@ -894,9 +897,9 @@ void g_getind (unsigned Flags, unsigned Offs)
             /* Character sized */
             AddCodeLine ("ldy #$%02X", Offs);
             if (Flags & CF_UNSIGNED) {
-                AddCodeLine ("jsr ldauidx");
+                AddCodeLine ("%s ldauidx", CrtJsrOrJsl());
             } else {
-                AddCodeLine ("jsr ldaidx");
+                AddCodeLine ("%s ldaidx", CrtJsrOrJsl());
             }
             break;
 
@@ -910,13 +913,13 @@ void g_getind (unsigned Flags, unsigned Offs)
                 AddCodeLine ("ora (ptr1),y");
             } else {
                 AddCodeLine ("ldy #$%02X", Offs+1);
-                AddCodeLine ("jsr ldaxidx");
+                AddCodeLine ("%s ldaxidx", CrtJsrOrJsl());
             }
             break;
 
         case CF_LONG:
             AddCodeLine ("ldy #$%02X", Offs+3);
-            AddCodeLine ("jsr ldeaxidx");
+            AddCodeLine ("%s ldeaxidx", CrtJsrOrJsl());
             if (Flags & CF_TEST) {
                 g_test (Flags);
             }
@@ -962,7 +965,7 @@ void g_leasp (int Offs)
         if (IS_Get (&CodeSizeFactor) < 200) {
             /* 8 bit offset with subroutine call */
             AddCodeLine ("lda #$%02X", Lo);
-            AddCodeLine ("jsr leaa0sp");
+            AddCodeLine ("%s leaa0sp", CrtJsrOrJsl());
         } else {
             /* 8 bit offset inlined */
             unsigned L = GetLocalLabel ();
@@ -978,7 +981,7 @@ void g_leasp (int Offs)
         /* Full 16 bit offset with subroutine call */
         AddCodeLine ("lda #$%02X", Lo);
         AddCodeLine ("ldx #$%02X", Hi);
-        AddCodeLine ("jsr leaaxsp");
+        AddCodeLine ("%s leaaxsp", CrtJsrOrJsl());
     } else {
         /* Full 16 bit offset inlined */
         AddCodeLine ("lda sp");
@@ -1026,7 +1029,7 @@ void g_leavariadic (int Offs)
         g_defcodelabel (L);
     } else {
         AddCodeLine ("ldx #$00");
-        AddCodeLine ("jsr leaaxsp");
+        AddCodeLine ("%s leaaxsp", CrtJsrOrJsl());
     }
 
     /* Add the offset to the primary */
@@ -1116,7 +1119,7 @@ void g_putlocal (unsigned Flags, int Offs, long Val)
             } else {
                 AddCodeLine ("ldy #$%02X", Offs);
                 if ((Flags & CF_NOKEEP) == 0 || IS_Get (&CodeSizeFactor) < 160) {
-                    AddCodeLine ("jsr staxysp");
+                    AddCodeLine ("%s staxysp", CrtJsrOrJsl());
                 } else {
                     AddCodeLine ("sta (sp),y");
                     AddCodeLine ("iny");
@@ -1131,7 +1134,7 @@ void g_putlocal (unsigned Flags, int Offs, long Val)
                 g_getimmed (Flags, Val, 0);
             }
             AddCodeLine ("ldy #$%02X", Offs);
-            AddCodeLine ("jsr steaxysp");
+            AddCodeLine ("%s steaxysp", CrtJsrOrJsl());
             break;
 
         default:
@@ -1197,15 +1200,15 @@ void g_putind (unsigned Flags, unsigned Offs)
     switch (Flags & CF_TYPEMASK) {
 
         case CF_CHAR:
-            AddCodeLine ("jsr staspidx");
+            AddCodeLine ("%s staspidx", CrtJsrOrJsl());
             break;
 
         case CF_INT:
-            AddCodeLine ("jsr staxspidx");
+            AddCodeLine ("%s staxspidx", CrtJsrOrJsl());
             break;
 
         case CF_LONG:
-            AddCodeLine ("jsr steaxspidx");
+            AddCodeLine ("%s steaxspidx", CrtJsrOrJsl());
             break;
 
         default:
@@ -1233,9 +1236,9 @@ void g_toslong (unsigned flags)
         case CF_CHAR:
         case CF_INT:
             if (flags & CF_UNSIGNED) {
-                AddCodeLine ("jsr tosulong");
+                AddCodeLine ("%s tosulong", CrtJsrOrJsl());
             } else {
-                AddCodeLine ("jsr toslong");
+                AddCodeLine ("%s toslong", CrtJsrOrJsl());
             }
             push (CF_INT);
             break;
@@ -1260,7 +1263,7 @@ void g_tosint (unsigned flags)
             break;
 
         case CF_LONG:
-            AddCodeLine ("jsr tosint");
+            AddCodeLine ("%s tosint", CrtJsrOrJsl());
             pop (CF_INT);
             break;
 
@@ -1348,7 +1351,7 @@ void g_reglong (unsigned from)
                         AddCodeLine ("stx sreg");
                         AddCodeLine ("stx sreg+1");
                     } else {
-                        AddCodeLine ("jsr aulong");
+                        AddCodeLine ("%s aulong", CrtJsrOrJsl());
                     }
                 } else {
                     if (IS_Get (&CodeSizeFactor) >= 366) {
@@ -1356,7 +1359,7 @@ void g_reglong (unsigned from)
                         AddCodeLine ("stx sreg");
                         AddCodeLine ("stx sreg+1");
                     } else {
-                        AddCodeLine ("jsr along");
+                        AddCodeLine ("%s along", CrtJsrOrJsl());
                     }
                 }
                 break;
@@ -1370,10 +1373,10 @@ void g_reglong (unsigned from)
                     AddCodeLine ("sty sreg");
                     AddCodeLine ("sty sreg+1");
                 } else {
-                    AddCodeLine ("jsr axulong");
+                    AddCodeLine ("%s axulong", CrtJsrOrJsl());
                 }
             } else {
-                AddCodeLine ("jsr axlong");
+                AddCodeLine ("%s axlong", CrtJsrOrJsl());
             }
             break;
 
@@ -1797,10 +1800,10 @@ void g_addeqstatic (unsigned flags, uintptr_t label, long offs,
                     AddCodeLine ("sty ptr1");
                     AddCodeLine ("ldy #>(%s)", lbuf);
                     if (val == 1) {
-                        AddCodeLine ("jsr laddeq1");
+                        AddCodeLine ("%s laddeq1", CrtJsrOrJsl());
                     } else {
                         AddCodeLine ("lda #$%02X", (int)(val & 0xFF));
-                        AddCodeLine ("jsr laddeqa");
+                        AddCodeLine ("%s laddeqa", CrtJsrOrJsl());
                     }
                 } else {
                     g_getstatic (flags, label, offs);
@@ -1811,7 +1814,7 @@ void g_addeqstatic (unsigned flags, uintptr_t label, long offs,
                 AddCodeLine ("ldy #<(%s)", lbuf);
                 AddCodeLine ("sty ptr1");
                 AddCodeLine ("ldy #>(%s)", lbuf);
-                AddCodeLine ("jsr laddeq");
+                AddCodeLine ("%s laddeq", CrtJsrOrJsl());
             }
             break;
 
@@ -1875,10 +1878,10 @@ void g_addeqlocal (unsigned flags, int Offs, unsigned long val)
                     }
                 } else {
                     g_getimmed (flags, val, 0);
-                    AddCodeLine ("jsr addeqysp");
+                    AddCodeLine ("%s addeqysp", CrtJsrOrJsl());
                 }
             } else {
-                AddCodeLine ("jsr addeqysp");
+                AddCodeLine ("%s addeqysp", CrtJsrOrJsl());
             }
             break;
 
@@ -1887,7 +1890,7 @@ void g_addeqlocal (unsigned flags, int Offs, unsigned long val)
                 g_getimmed (flags, val, 0);
             }
             AddCodeLine ("ldy #$%02X", Offs);
-            AddCodeLine ("jsr laddeqysp");
+            AddCodeLine ("%s laddeqysp", CrtJsrOrJsl());
             break;
 
         default:
@@ -1922,7 +1925,7 @@ void g_addeqind (unsigned flags, unsigned offs, unsigned long val)
 
         case CF_INT:
         case CF_LONG:
-            AddCodeLine ("jsr pushax");         /* Push the address */
+            AddCodeLine ("%s pushax", CrtJsrOrJsl());  /* Push the address */
             push (CF_PTR);                      /* Correct the internal sp */
             g_getind (flags, offs);             /* Fetch the value */
             g_inc (flags, val);                 /* Increment value in primary */
@@ -2053,7 +2056,7 @@ void g_subeqstatic (unsigned flags, uintptr_t label, long offs,
                     AddCodeLine ("sty ptr1");
                     AddCodeLine ("ldy #>(%s)", lbuf);
                     AddCodeLine ("lda #$%02X", (unsigned char)val);
-                    AddCodeLine ("jsr lsubeqa");
+                    AddCodeLine ("%s lsubeqa", CrtJsrOrJsl());
                 } else {
                     g_getstatic (flags, label, offs);
                     g_dec (flags, val);
@@ -2063,7 +2066,7 @@ void g_subeqstatic (unsigned flags, uintptr_t label, long offs,
                 AddCodeLine ("ldy #<(%s)", lbuf);
                 AddCodeLine ("sty ptr1");
                 AddCodeLine ("ldy #>(%s)", lbuf);
-                AddCodeLine ("jsr lsubeq");
+                AddCodeLine ("%s lsubeq", CrtJsrOrJsl());
             }
             break;
 
@@ -2113,7 +2116,7 @@ void g_subeqlocal (unsigned flags, int Offs, unsigned long val)
                 g_getimmed (flags, val, 0);
             }
             AddCodeLine ("ldy #$%02X", Offs);
-            AddCodeLine ("jsr subeqysp");
+            AddCodeLine ("%s subeqysp", CrtJsrOrJsl());
             break;
 
         case CF_LONG:
@@ -2121,7 +2124,7 @@ void g_subeqlocal (unsigned flags, int Offs, unsigned long val)
                 g_getimmed (flags, val, 0);
             }
             AddCodeLine ("ldy #$%02X", Offs);
-            AddCodeLine ("jsr lsubeqysp");
+            AddCodeLine ("%s lsubeqysp", CrtJsrOrJsl());
             break;
 
         default:
@@ -2156,7 +2159,7 @@ void g_subeqind (unsigned flags, unsigned offs, unsigned long val)
 
         case CF_INT:
         case CF_LONG:
-            AddCodeLine ("jsr pushax");         /* Push the address */
+            AddCodeLine ("%s pushax", CrtJsrOrJsl()); /* Push the address */
             push (CF_PTR);                      /* Correct the internal sp */
             g_getind (flags, offs);             /* Fetch the value */
             g_dec (flags, val);                 /* Increment value in primary */
@@ -2189,7 +2192,7 @@ void g_addaddr_local (unsigned flags attribute ((unused)), int offs)
             g_inc (CF_INT | CF_CONST, offs);
         }
         /* Add the current stackpointer value */
-        AddCodeLine ("jsr leaaxsp");
+        AddCodeLine ("%s leaaxsp", CrtJsrOrJsl());
     } else {
         if (offs != 0) {
             /* We cannot address more then 256 bytes of locals anyway */
@@ -2262,7 +2265,7 @@ void g_save (unsigned flags)
             break;
 
         case CF_LONG:
-            AddCodeLine ("jsr saveeax");
+            AddCodeLine ("%s saveeax", CrtJsrOrJsl());
             break;
 
         default:
@@ -2291,7 +2294,7 @@ void g_restore (unsigned flags)
             break;
 
         case CF_LONG:
-            AddCodeLine ("jsr resteax");
+            AddCodeLine ("%s resteax", CrtJsrOrJsl());
             break;
 
         default:
@@ -2360,7 +2363,7 @@ static void oper (unsigned Flags, unsigned long Val, const char* const* Subs)
     }
 
     /* Output the operation */
-    AddCodeLine ("jsr %s", *Subs);
+    AddCodeLine ("%s %s", JsrOrJsl(/*TODO: What kind of function are we calling? */ 0), *Subs);
 
     /* The operation will pop it's argument */
     pop (Flags);
@@ -2387,9 +2390,9 @@ void g_test (unsigned flags)
 
         case CF_LONG:
             if (flags & CF_UNSIGNED) {
-                AddCodeLine ("jsr utsteax");
+                AddCodeLine ("%s utsteax", CrtJsrOrJsl());
             } else {
-                AddCodeLine ("jsr tsteax");
+                AddCodeLine ("%s tsteax", CrtJsrOrJsl());
             }
             break;
 
@@ -2411,13 +2414,13 @@ void g_push (unsigned flags, unsigned long val)
 
             /* Handle as 8 bit value */
             AddCodeLine ("lda #$%02X", (unsigned char) val);
-            AddCodeLine ("jsr pusha");
+            AddCodeLine ("%s pusha", CrtJsrOrJsl());
 
         } else {
 
             /* Handle as 16 bit value */
             g_getimmed (flags, val, 0);
-            AddCodeLine ("jsr pushax");
+            AddCodeLine ("%s pushax", CrtJsrOrJsl());
         }
 
     } else {
@@ -2434,16 +2437,16 @@ void g_push (unsigned flags, unsigned long val)
             case CF_CHAR:
                 if (flags & CF_FORCECHAR) {
                     /* Handle as char */
-                    AddCodeLine ("jsr pusha");
+                    AddCodeLine ("%s pusha", CrtJsrOrJsl());
                     break;
                 }
                 /* FALL THROUGH */
             case CF_INT:
-                AddCodeLine ("jsr pushax");
+                AddCodeLine ("%s pushax", CrtJsrOrJsl());
                 break;
 
             case CF_LONG:
-                AddCodeLine ("jsr pusheax");
+                AddCodeLine ("%s pusheax", CrtJsrOrJsl());
                 break;
 
             default:
@@ -2468,11 +2471,11 @@ void g_swap (unsigned flags)
 
         case CF_CHAR:
         case CF_INT:
-            AddCodeLine ("jsr swapstk");
+            AddCodeLine ("%s swapstk", CrtJsrOrJsl());
             break;
 
         case CF_LONG:
-            AddCodeLine ("jsr swapestk");
+            AddCodeLine ("%s swapestk", CrtJsrOrJsl());
             break;
 
         default:
@@ -2490,7 +2493,7 @@ void g_call (unsigned Flags, const char* Label, unsigned ArgSize)
         /* Pass the argument count */
         AddCodeLine ("ldy #$%02X", ArgSize);
     }
-    AddCodeLine ("jsr _%s", Label);
+    AddCodeLine ("%s _%s", JsrOrJsl(/*TODO: Figure out what kind of call this is? */ 0), Label);
     StackPtr += ArgSize;                /* callee pops args */
 }
 
@@ -2505,7 +2508,7 @@ void g_callind (unsigned Flags, unsigned ArgSize, int Offs)
             /* Pass arg count */
             AddCodeLine ("ldy #$%02X", ArgSize);
         }
-        AddCodeLine ("jsr callax");
+        AddCodeLine ("%s callax", CrtJsrOrJsl());
     } else {
         /* The address is on stack, offset is on Val */
         Offs -= StackPtr;
@@ -2518,7 +2521,7 @@ void g_callind (unsigned Flags, unsigned ArgSize, int Offs)
         AddCodeLine ("lda (sp),y");
         AddCodeLine ("sta jmpvec+2");
         AddCodeLine ("pla");
-        AddCodeLine ("jsr jmpvec");
+        AddCodeLine ("%s jmpvec", CrtJsrOrJsl());
     }
 
     /* Callee pops args */
@@ -2599,9 +2602,9 @@ void g_drop (unsigned Space)
         AddCodeLine ("pla");
     } else if (Space > 8) {
         AddCodeLine ("ldy #$%02X", Space);
-        AddCodeLine ("jsr addysp");
+        AddCodeLine ("%s addysp", CrtJsrOrJsl());
     } else if (Space != 0) {
-        AddCodeLine ("jsr incsp%u", Space);
+        AddCodeLine ("%s incsp%u", CrtJsrOrJsl(), Space);
     }
 }
 
@@ -2628,9 +2631,9 @@ void g_space (int Space)
         AddCodeLine ("pla");
     } else if (Space > 8) {
         AddCodeLine ("ldy #$%02X", Space);
-        AddCodeLine ("jsr subysp");
+        AddCodeLine ("%s subysp", CrtJsrOrJsl());
     } else if (Space != 0) {
-        AddCodeLine ("jsr decsp%u", Space);
+        AddCodeLine ("%s decsp%u", CrtJsrOrJsl(), Space);
     }
 }
 
@@ -2639,7 +2642,7 @@ void g_space (int Space)
 void g_cstackcheck (void)
 /* Check for a C stack overflow */
 {
-    AddCodeLine ("jsr cstkchk");
+    AddCodeLine ("%s cstkchk", CrtJsrOrJsl());
 }
 
 
@@ -2647,7 +2650,7 @@ void g_cstackcheck (void)
 void g_stackcheck (void)
 /* Check for a stack overflow */
 {
-    AddCodeLine ("jsr stkchk");
+    AddCodeLine ("%s stkchk", CrtJsrOrJsl());
 }
 
 
@@ -2786,22 +2789,22 @@ void g_mul (unsigned flags, unsigned long val)
                         /* Nothing to do */
                         return;
                     case 3:
-                        AddCodeLine ("jsr mulax3");
+                        AddCodeLine ("%s mulax3", CrtJsrOrJsl());
                         return;
                     case 5:
-                        AddCodeLine ("jsr mulax5");
+                        AddCodeLine ("%s mulax5", CrtJsrOrJsl());
                         return;
                     case 6:
-                        AddCodeLine ("jsr mulax6");
+                        AddCodeLine ("%s mulax6", CrtJsrOrJsl());
                         return;
                     case 7:
-                        AddCodeLine ("jsr mulax7");
+                        AddCodeLine ("%s mulax7", CrtJsrOrJsl());
                         return;
                     case 9:
-                        AddCodeLine ("jsr mulax9");
+                        AddCodeLine ("%s mulax9", CrtJsrOrJsl());
                         return;
                     case 10:
-                        AddCodeLine ("jsr mulax10");
+                        AddCodeLine ("%s mulax10", CrtJsrOrJsl());
                         return;
                 }
                 break;
@@ -3267,25 +3270,25 @@ void g_asr (unsigned flags, unsigned long val)
                 }
                 if (val == 7) {
                     if (flags & CF_UNSIGNED) {
-                        AddCodeLine ("jsr shrax7");
+                        AddCodeLine ("%s shrax7", CrtJsrOrJsl());
                     } else {
-                        AddCodeLine ("jsr asrax7");
+                        AddCodeLine ("%s asrax7", CrtJsrOrJsl());
                     }
                     val = 0;
                 }
                 if (val >= 4) {
                     if (flags & CF_UNSIGNED) {
-                        AddCodeLine ("jsr shrax4");
+                        AddCodeLine ("%s shrax4", CrtJsrOrJsl());
                     } else {
-                        AddCodeLine ("jsr asrax4");
+                        AddCodeLine ("%s asrax4", CrtJsrOrJsl());
                     }
                     val -= 4;
                 }
                 if (val > 0) {
                     if (flags & CF_UNSIGNED) {
-                        AddCodeLine ("jsr shrax%lu", val);
+                        AddCodeLine ("%s shrax%lu", CrtJsrOrJsl(), val);
                     } else {
-                        AddCodeLine ("jsr asrax%lu", val);
+                        AddCodeLine ("%s asrax%lu", CrtJsrOrJsl(), val);
                     }
                 }
                 return;
@@ -3342,17 +3345,17 @@ void g_asr (unsigned flags, unsigned long val)
                 }
                 if (val >= 4) {
                     if (flags & CF_UNSIGNED) {
-                        AddCodeLine ("jsr shreax4");
+                        AddCodeLine ("%s shreax4", CrtJsrOrJsl());
                     } else {
-                        AddCodeLine ("jsr asreax4");
+                        AddCodeLine ("%s asreax4", CrtJsrOrJsl());
                     }
                     val -= 4;
                 }
                 if (val > 0) {
                     if (flags & CF_UNSIGNED) {
-                        AddCodeLine ("jsr shreax%lu", val);
+                        AddCodeLine ("%s shreax%lu", CrtJsrOrJsl(), val);
                     } else {
-                        AddCodeLine ("jsr asreax%lu", val);
+                        AddCodeLine ("%s asreax%lu", CrtJsrOrJsl(), val);
                     }
                 }
                 return;
@@ -3417,25 +3420,25 @@ void g_asl (unsigned flags, unsigned long val)
                 }
                 if (val == 7) {
                     if (flags & CF_UNSIGNED) {
-                        AddCodeLine ("jsr shlax7");
+                        AddCodeLine ("%s shlax7", CrtJsrOrJsl());
                     } else {
-                        AddCodeLine ("jsr aslax7");
+                        AddCodeLine ("%s aslax7", CrtJsrOrJsl());
                     }
                     val = 0;
                 }
                 if (val >= 4) {
                     if (flags & CF_UNSIGNED) {
-                        AddCodeLine ("jsr shlax4");
+                        AddCodeLine ("%s shlax4", CrtJsrOrJsl());
                     } else {
-                        AddCodeLine ("jsr aslax4");
+                        AddCodeLine ("%s aslax4", CrtJsrOrJsl());
                     }
                     val -= 4;
                 }
                 if (val > 0) {
                     if (flags & CF_UNSIGNED) {
-                        AddCodeLine ("jsr shlax%lu", val);
+                        AddCodeLine ("%s shlax%lu", CrtJsrOrJsl(), val);
                     } else {
-                        AddCodeLine ("jsr aslax%lu", val);
+                        AddCodeLine ("%s aslax%lu", CrtJsrOrJsl(), val);
                     }
                 }
                 return;
@@ -3466,17 +3469,17 @@ void g_asl (unsigned flags, unsigned long val)
                 }
                 if (val > 4) {
                     if (flags & CF_UNSIGNED) {
-                        AddCodeLine ("jsr shleax4");
+                        AddCodeLine ("%s shleax4", CrtJsrOrJsl());
                     } else {
-                        AddCodeLine ("jsr asleax4");
+                        AddCodeLine ("%s asleax4", CrtJsrOrJsl());
                     }
                     val -= 4;
                 }
                 if (val > 0) {
                     if (flags & CF_UNSIGNED) {
-                        AddCodeLine ("jsr shleax%lu", val);
+                        AddCodeLine ("%s shleax%lu", CrtJsrOrJsl(), val);
                     } else {
-                        AddCodeLine ("jsr asleax%lu", val);
+                        AddCodeLine ("%s asleax%lu", CrtJsrOrJsl(), val);
                     }
                 }
                 return;
@@ -3514,11 +3517,11 @@ void g_neg (unsigned Flags)
             /* FALLTHROUGH */
 
         case CF_INT:
-            AddCodeLine ("jsr negax");
+            AddCodeLine ("%s negax", CrtJsrOrJsl());
             break;
 
         case CF_LONG:
-            AddCodeLine ("jsr negeax");
+            AddCodeLine ("%s negeax", CrtJsrOrJsl());
             break;
 
         default:
@@ -3534,15 +3537,15 @@ void g_bneg (unsigned flags)
     switch (flags & CF_TYPEMASK) {
 
         case CF_CHAR:
-            AddCodeLine ("jsr bnega");
+            AddCodeLine ("%s bnega", CrtJsrOrJsl());
             break;
 
         case CF_INT:
-            AddCodeLine ("jsr bnegax");
+            AddCodeLine ("%s bnegax", CrtJsrOrJsl());
             break;
 
         case CF_LONG:
-            AddCodeLine ("jsr bnegeax");
+            AddCodeLine ("%s bnegeax", CrtJsrOrJsl());
             break;
 
         default:
@@ -3565,11 +3568,11 @@ void g_com (unsigned Flags)
             /* FALLTHROUGH */
 
         case CF_INT:
-            AddCodeLine ("jsr complax");
+            AddCodeLine ("%s complax", CrtJsrOrJsl());
             break;
 
         case CF_LONG:
-            AddCodeLine ("jsr compleax");
+            AddCodeLine ("%s compleax", CrtJsrOrJsl());
             break;
 
         default:
@@ -3615,10 +3618,10 @@ void g_inc (unsigned flags, unsigned long val)
             } else if (IS_Get (&CodeSizeFactor) < 200) {
                 /* Use jsr calls */
                 if (val <= 8) {
-                    AddCodeLine ("jsr incax%lu", val);
+                    AddCodeLine ("%s incax%lu", CrtJsrOrJsl(), val);
                 } else if (val <= 255) {
                     AddCodeLine ("ldy #$%02X", (unsigned char) val);
-                    AddCodeLine ("jsr incaxy");
+                    AddCodeLine ("%s incaxy", CrtJsrOrJsl());
                 } else {
                     g_add (flags | CF_CONST, val);
                 }
@@ -3664,7 +3667,7 @@ void g_inc (unsigned flags, unsigned long val)
         case CF_LONG:
             if (val <= 255) {
                 AddCodeLine ("ldy #$%02X", (unsigned char) val);
-                AddCodeLine ("jsr inceaxy");
+                AddCodeLine ("%s inceaxy", CrtJsrOrJsl());
             } else {
                 g_add (flags | CF_CONST, val);
             }
@@ -3708,10 +3711,10 @@ void g_dec (unsigned flags, unsigned long val)
             if (IS_Get (&CodeSizeFactor) < 200) {
                 /* Use subroutines */
                 if (val <= 8) {
-                    AddCodeLine ("jsr decax%d", (int) val);
+                    AddCodeLine ("%s decax%d", CrtJsrOrJsl(), (int) val);
                 } else if (val <= 255) {
                     AddCodeLine ("ldy #$%02X", (unsigned char) val);
-                    AddCodeLine ("jsr decaxy");
+                    AddCodeLine ("%s decaxy", CrtJsrOrJsl());
                 } else {
                     g_sub (flags | CF_CONST, val);
                 }
@@ -3756,7 +3759,7 @@ void g_dec (unsigned flags, unsigned long val)
         case CF_LONG:
             if (val <= 255) {
                 AddCodeLine ("ldy #$%02X", (unsigned char) val);
-                AddCodeLine ("jsr deceaxy");
+                AddCodeLine ("%s deceaxy", CrtJsrOrJsl());
             } else {
                 g_sub (flags | CF_CONST, val);
             }
@@ -3797,7 +3800,7 @@ void g_eq (unsigned flags, unsigned long val)
             case CF_CHAR:
                 if (flags & CF_FORCECHAR) {
                     AddCodeLine ("cmp #$%02X", (unsigned char)val);
-                    AddCodeLine ("jsr booleq");
+                    AddCodeLine ("%s booleq", CrtJsrOrJsl());
                     return;
                 }
                 /* FALLTHROUGH */
@@ -3808,7 +3811,7 @@ void g_eq (unsigned flags, unsigned long val)
                 AddCodeLine ("bne %s", LocalLabelName (L));
                 AddCodeLine ("cmp #$%02X", (unsigned char)val);
                 g_defcodelabel (L);
-                AddCodeLine ("jsr booleq");
+                AddCodeLine ("%s booleq", CrtJsrOrJsl());
                 return;
 
             case CF_LONG:
@@ -3851,7 +3854,7 @@ void g_ne (unsigned flags, unsigned long val)
             case CF_CHAR:
                 if (flags & CF_FORCECHAR) {
                     AddCodeLine ("cmp #$%02X", (unsigned char)val);
-                    AddCodeLine ("jsr boolne");
+                    AddCodeLine ("%s boolne", CrtJsrOrJsl());
                     return;
                 }
                 /* FALLTHROUGH */
@@ -3862,7 +3865,7 @@ void g_ne (unsigned flags, unsigned long val)
                 AddCodeLine ("bne %s", LocalLabelName (L));
                 AddCodeLine ("cmp #$%02X", (unsigned char)val);
                 g_defcodelabel (L);
-                AddCodeLine ("jsr boolne");
+                AddCodeLine ("%s boolne", CrtJsrOrJsl());
                 return;
 
             case CF_LONG:
@@ -3909,7 +3912,7 @@ void g_lt (unsigned flags, unsigned long val)
             /* Give a warning in some special cases */
             if (val == 0) {
                 Warning ("Comparison of unsigned type < 0 is always false");
-                AddCodeLine ("jsr return0");
+                AddCodeLine ("%s return0", CrtJsrOrJsl());
                 return;
             }
 
@@ -3919,7 +3922,7 @@ void g_lt (unsigned flags, unsigned long val)
                 case CF_CHAR:
                     if (flags & CF_FORCECHAR) {
                         AddCodeLine ("cmp #$%02X", (unsigned char)val);
-                        AddCodeLine ("jsr boolult");
+                        AddCodeLine ("%s boolult", CrtJsrOrJsl());
                         return;
                     }
                     /* FALLTHROUGH */
@@ -3933,7 +3936,7 @@ void g_lt (unsigned flags, unsigned long val)
                         AddCodeLine ("cmp #$%02X", (unsigned char)val);
                         g_defcodelabel (L);
                     }
-                    AddCodeLine ("jsr boolult");
+                    AddCodeLine ("%s boolult", CrtJsrOrJsl());
                     return;
 
                 case CF_LONG:
@@ -3945,7 +3948,7 @@ void g_lt (unsigned flags, unsigned long val)
                     AddCodeLine ("sbc #$%02X", (unsigned char)(val >> 16));
                     AddCodeLine ("lda sreg+1");
                     AddCodeLine ("sbc #$%02X", (unsigned char)(val >> 24));
-                    AddCodeLine ("jsr boolult");
+                    AddCodeLine ("%s boolult", CrtJsrOrJsl());
                     return;
 
                 default:
@@ -4076,7 +4079,7 @@ void g_le (unsigned flags, unsigned long val)
                         } else {
                             /* Always true */
                             Warning ("Condition is always true");
-                            AddCodeLine ("jsr return1");
+                            AddCodeLine ("%s return1", CrtJsrOrJsl());
                         }
                     } else {
                         /* Signed compare */
@@ -4088,7 +4091,7 @@ void g_le (unsigned flags, unsigned long val)
                         } else {
                             /* Always true */
                             Warning ("Condition is always true");
-                            AddCodeLine ("jsr return1");
+                            AddCodeLine ("%s return1", CrtJsrOrJsl());
                         }
                     }
                     return;
@@ -4106,7 +4109,7 @@ void g_le (unsigned flags, unsigned long val)
                     } else {
                         /* Always true */
                         Warning ("Condition is always true");
-                        AddCodeLine ("jsr return1");
+                        AddCodeLine ("%s return1", CrtJsrOrJsl());
                     }
                 } else {
                     /* Signed compare */
@@ -4115,7 +4118,7 @@ void g_le (unsigned flags, unsigned long val)
                     } else {
                         /* Always true */
                         Warning ("Condition is always true");
-                        AddCodeLine ("jsr return1");
+                        AddCodeLine ("%s return1", CrtJsrOrJsl());
                     }
                 }
                 return;
@@ -4131,7 +4134,7 @@ void g_le (unsigned flags, unsigned long val)
                     } else {
                         /* Always true */
                         Warning ("Condition is always true");
-                        AddCodeLine ("jsr return1");
+                        AddCodeLine ("%s return1", CrtJsrOrJsl());
                     }
                 } else {
                     /* Signed compare */
@@ -4140,7 +4143,7 @@ void g_le (unsigned flags, unsigned long val)
                     } else {
                         /* Always true */
                         Warning ("Condition is always true");
-                        AddCodeLine ("jsr return1");
+                        AddCodeLine ("%s return1", CrtJsrOrJsl());
                     }
                 }
                 return;
@@ -4196,7 +4199,7 @@ void g_gt (unsigned flags, unsigned long val)
                         } else {
                             /* Never true */
                             Warning ("Condition is never true");
-                            AddCodeLine ("jsr return0");
+                            AddCodeLine ("%s return0", CrtJsrOrJsl());
                         }
                     } else {
                         if ((long) val < 0x7F) {
@@ -4207,7 +4210,7 @@ void g_gt (unsigned flags, unsigned long val)
                         } else {
                             /* Never true */
                             Warning ("Condition is never true");
-                            AddCodeLine ("jsr return0");
+                            AddCodeLine ("%s return0", CrtJsrOrJsl());
                         }
                     }
                     return;
@@ -4235,7 +4238,7 @@ void g_gt (unsigned flags, unsigned long val)
                     } else {
                         /* Never true */
                         Warning ("Condition is never true");
-                        AddCodeLine ("jsr return0");
+                        AddCodeLine ("%s return0", CrtJsrOrJsl());
                     }
                 } else {
                     /* Signed compare */
@@ -4244,7 +4247,7 @@ void g_gt (unsigned flags, unsigned long val)
                     } else {
                         /* Never true */
                         Warning ("Condition is never true");
-                        AddCodeLine ("jsr return0");
+                        AddCodeLine ("%s return0", CrtJsrOrJsl());
                     }
                 }
                 return;
@@ -4268,7 +4271,7 @@ void g_gt (unsigned flags, unsigned long val)
                     } else {
                         /* Never true */
                         Warning ("Condition is never true");
-                        AddCodeLine ("jsr return0");
+                        AddCodeLine ("%s return0", CrtJsrOrJsl());
                     }
                 } else {
                     /* Signed compare */
@@ -4279,7 +4282,7 @@ void g_gt (unsigned flags, unsigned long val)
                     } else {
                         /* Never true */
                         Warning ("Condition is never true");
-                        AddCodeLine ("jsr return0");
+                        AddCodeLine ("%s return0", CrtJsrOrJsl());
                     }
                 }
                 return;
@@ -4326,7 +4329,7 @@ void g_ge (unsigned flags, unsigned long val)
             /* Give a warning in some special cases */
             if (val == 0) {
                 Warning ("Condition is always true");
-                AddCodeLine ("jsr return1");
+                AddCodeLine ("%s return1", CrtJsrOrJsl());
                 return;
             }
 
@@ -4380,7 +4383,7 @@ void g_ge (unsigned flags, unsigned long val)
                 case CF_CHAR:
                     if (flags & CF_FORCECHAR) {
                         AddCodeLine ("tax");
-                        AddCodeLine ("jsr boolge");
+                        AddCodeLine ("%s boolge", CrtJsrOrJsl());
                         return;
                     }
                     /* FALLTHROUGH */
@@ -4388,13 +4391,13 @@ void g_ge (unsigned flags, unsigned long val)
                 case CF_INT:
                     /* Just test the high byte */
                     AddCodeLine ("txa");
-                    AddCodeLine ("jsr boolge");
+                    AddCodeLine ("%s boolge", CrtJsrOrJsl());
                     return;
 
                 case CF_LONG:
                     /* Just test the high byte */
                     AddCodeLine ("lda sreg+1");
-                    AddCodeLine ("jsr boolge");
+                    AddCodeLine ("%s boolge", CrtJsrOrJsl());
                     return;
 
                 default:
@@ -4623,11 +4626,11 @@ void g_initstatic (unsigned InitLabel, unsigned VarLabel, unsigned Size)
     } else {
         /* Use the easy way here: memcpy() */
         g_getimmed (CF_STATIC, VarLabel, 0);
-        AddCodeLine ("jsr pushax");
+        AddCodeLine ("%s pushax", CrtJsrOrJsl());
         g_getimmed (CF_STATIC, InitLabel, 0);
-        AddCodeLine ("jsr pushax");
+        AddCodeLine ("%s pushax", CrtJsrOrJsl());
         g_getimmed (CF_INT | CF_UNSIGNED | CF_CONST, Size, 0);
-        AddCodeLine ("jsr %s", GetLabelName (CF_EXTERNAL, (uintptr_t) "memcpy", 0));
+        AddCodeLine ("%s %s", JsrOrJsl(/*TODO: Figure out what kind of call this is? */ 0), GetLabelName (CF_EXTERNAL, (uintptr_t) "memcpy", 0));
     }
 }
 

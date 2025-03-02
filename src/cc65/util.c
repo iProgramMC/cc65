@@ -34,6 +34,7 @@
 
 
 #include "util.h"
+#include "global.h"
 
 
 
@@ -59,3 +60,28 @@ int PowerOf2 (unsigned long Val)
     }
     return -1;
 }
+
+
+const char* JsrOrJsl(int IsLong)
+/* If IsLong is not zero, return "jsl". Else, return "jsr". */
+{
+    if (IsLong)
+        return "jsl";
+    else
+        return "jsr";
+}
+
+
+int CrtIsLong(void)
+/* Return non-zero if the CRT is marked long, else return 0. */
+{
+    return IS_Get(&CRTIsLong);
+}
+
+
+const char* CrtJsrOrJsl(void)
+/* If the CRT is marked as long, return "jsl". Else, return "jsr". */
+{
+    return JsrOrJsl(CrtIsLong());
+}
+

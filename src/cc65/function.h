@@ -49,6 +49,7 @@ typedef enum {
     FF_HAS_RETURN       = 0x0001,       /* Function has a return statement */
     FF_IS_MAIN          = 0x0002,       /* This is the main function */
     FF_VOID_RETURN      = 0x0004,       /* Function returning void */
+    FF_IS_FAR           = 0x0008,       /* Function is declared "far" (called with JSL and returned from with RTL) */
 } funcflags_t;
 
 /* Structure that holds all data needed for function activation */
@@ -116,6 +117,9 @@ int F_IsVariadic (const Function* F);
 
 int F_IsOldStyle (const Function* F);
 /* Return true if this is an old style (K&R) function */
+
+int F_IsFar (const Function* F);
+/* Return true if this function is called with JSL and returns with RTL */
 
 int F_HasOldStyleIntRet (const Function* F);
 /* Return true if this is an old style (K&R) function with an implicit int return */

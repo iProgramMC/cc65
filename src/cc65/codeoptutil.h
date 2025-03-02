@@ -464,6 +464,23 @@ int FindRegLastUseInOpenRange (CodeSeg* S, int First, int Last, unsigned what);
 ** Return the index of the found entry, or First if not found.
 */
 
+/* small util here -iProgram */
+#if defined(HAVE_INLINE)
+
+extern int CrtIsLong(void);
+
+INLINE int GetCrtCallCode(void)
+/* If CRT is marked long, then OP65_JSL. Else OP65_JSR. */
+{
+    return CrtIsLong() ? OP65_JSL : OP65_JSR;
+}
+
+#else
+
+#define GetCrtCallCode() (CrtIsLong() ? OP65_JSL : OP65_JSR)
+
+#endif
+
 /* End of codeoptutil.h */
 
 #endif

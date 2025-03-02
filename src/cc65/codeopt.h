@@ -40,6 +40,7 @@
 
 /* cc65 */
 #include "codeseg.h"
+#include "util.h"
 
 
 

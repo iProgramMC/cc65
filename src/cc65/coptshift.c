@@ -215,7 +215,7 @@ unsigned OptShift1 (CodeSeg* S)
         CodeEntry* E = CS_GetEntry (S, I);
 
         /* Check for the sequence */
-        if (E->OPC == OP65_JSR                          &&
+        if ((E->OPC == OP65_JSR || E->OPC == OP65_JSL)  &&
             (Shift = GetShift (E->Arg)) != SHIFT_NONE   &&
             SHIFT_DIR (Shift) == SHIFT_DIR_LEFT) {
 
@@ -350,11 +350,11 @@ unsigned OptShift2 (CodeSeg* S)
             L[1]->OPC == OP65_DEX                                       &&
             L[0]->JumpTo->Owner == L[2]                                 &&
             !CS_RangeHasLabel (S, I, 2)                                 &&
-            L[2]->OPC == OP65_JSR                                       &&
+            (L[2]->OPC == OP65_JSR || L[2]->OPC == OP65_JSL)            &&
             SHIFT_TYPE (Shift = GetShift (L[2]->Arg)) == SHIFT_TYPE_ASR &&
             (Count = SHIFT_COUNT (Shift)) > 0) {
 
-            if (L[3]->OPC == OP65_JSR                                           &&
+            if ((L[3]->OPC == OP65_JSR || L[3]->OPC == OP65_JSL)                &&
                 SHIFT_TYPE (Shift = GetShift (L[3]->Arg)) == SHIFT_TYPE_ASR     &&
                 (Count2 = SHIFT_COUNT (Shift)) > 0) {
 
@@ -439,7 +439,7 @@ unsigned OptShift3 (CodeSeg* S)
             L[1]->OPC == OP65_INX                               &&
             L[0]->JumpTo->Owner == L[2]                         &&
             !CS_RangeHasLabel (S, I, 2)                         &&
-            L[2]->OPC == OP65_JSR                               &&
+            (L[2]->OPC == OP65_JSR || L[2]->OPC == OP65_JSL)    &&
             (Shift = GetShift (L[2]->Arg)) != SHIFT_NONE        &&
             SHIFT_DIR (Shift) == SHIFT_DIR_RIGHT                &&
             (Count = SHIFT_COUNT (Shift)) > 0) {
@@ -490,7 +490,7 @@ unsigned OptShift4 (CodeSeg* S)
         CodeEntry* E = CS_GetEntry (S, I);
 
         /* Check for the sequence */
-        if (E->OPC == OP65_JSR                          &&
+        if ((E->OPC == OP65_JSR || E->OPC == OP65_JSL)  &&
             (Shift = GetShift (E->Arg)) != SHIFT_NONE   &&
             SHIFT_DIR (Shift) == SHIFT_DIR_RIGHT        &&
             E->RI->In.RegX == 0) {
@@ -607,7 +607,7 @@ unsigned OptShift5 (CodeSeg* S)
             !CS_RangeHasLabel (S, I+1, 4)                       &&
             L[1]->OPC == OP65_LDX                               &&
             (L[1]->AM == AM65_ABS || L[1]->AM == AM65_ZP)       &&
-            L[2]->OPC == OP65_JSR                               &&
+            (L[2]->OPC == OP65_JSR || L[2]->OPC == OP65_JSL)    &&
             (ShiftType = GetShift (L[2]->Arg)) != SHIFT_NONE    &&
             SHIFT_COUNT(ShiftType) == 1                         &&
             L[3]->OPC == OP65_STA                               &&
@@ -707,7 +707,7 @@ unsigned OptShift6 (CodeSeg* S)
         CodeEntry* E = CS_GetEntry (S, I);
 
         /* Check for a call to one of the shift routine */
-        if (E->OPC == OP65_JSR                          &&
+        if ((E->OPC == OP65_JSR || E->OPC == OP65_JSL)  &&
             (Shift = GetShift (E->Arg)) != SHIFT_NONE   &&
             SHIFT_DIR (Shift) == SHIFT_DIR_LEFT         &&
             (Count = SHIFT_COUNT (Shift)) > 0) {

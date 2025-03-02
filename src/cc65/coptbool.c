@@ -38,6 +38,7 @@
 #include "codeinfo.h"
 #include "error.h"
 #include "coptbool.h"
+#include "codeoptutil.h"
 
 
 
@@ -192,7 +193,7 @@ unsigned OptBoolCmp (CodeSeg* S)
         CodeEntry* E = CS_GetEntry (S, I);
 
         /* Check for the sequence */
-        if (E->OPC == OP65_JSR                          &&
+        if ((E->OPC == OP65_JSR || E->OPC == OP65_JSL)  &&
             (Cond = FindTosCmpCond (E->Arg)) != CMP_INV &&
             (N = CS_GetNextEntry (S, I)) != 0           &&
             (N->Info & OF_ZBRA) != 0                    &&
@@ -211,7 +212,7 @@ unsigned OptBoolCmp (CodeSeg* S)
             }
 
             /* Replace the subroutine call. */
-            E = NewCodeEntry (OP65_JSR, AM65_ABS, "tosicmp", 0, E->LI);
+            E = NewCodeEntry (GetCrtCallCode(), AM65_ABS, "tosicmp", 0, E->LI);
             CS_InsertEntry (S, E, I+1);
             CS_DelEntry (S, I);
 
@@ -252,7 +253,7 @@ unsigned OptBoolTrans (CodeSeg* S)
         CodeEntry* E = CS_GetEntry (S, I);
 
         /* Check for a boolean transformer */
-        if (E->OPC == OP65_JSR                           &&
+        if ((E->OPC == OP65_JSR || E->OPC == OP65_JSL)  &&
             (Cond = FindBoolCmpCond (E->Arg)) != CMP_INV &&
             (N = CS_GetNextEntry (S, I)) != 0            &&
             (N->Info & OF_ZBRA) != 0                     &&
@@ -309,7 +310,7 @@ unsigned OptBoolUnary (CodeSeg* S)
         CodeEntry* E = CS_GetEntry (S, I);
 
         /* Check for a boolean transformer */
-        if (E->OPC == OP65_JSR                           &&
+        if ((E->OPC == OP65_JSR || E->OPC == OP65_JSL)   &&
             (Cond = FindBoolCmpCond (E->Arg)) != CMP_INV &&
             (N = CS_GetNextEntry (S, I)) != 0            &&
             (N->Info & OF_ZBRA) != 0) {
@@ -374,8 +375,8 @@ unsigned OptBoolUnary1 (CodeSeg* S)
         /* Check for the sequence.
         ** We allow the first entry to have labels.
         */
-        if (L[0]->OPC == OP65_JSR                   &&
-            (L[1] = CS_GetNextEntry (S, I)) != 0    &&
+        if ((L[0]->OPC == OP65_JSR || L[0]->OPC == OP65_JSL) &&
+            (L[1] = CS_GetNextEntry (S, I)) != 0             &&
             !CE_HasLabel (L[1])) {
             if (strcmp (L[0]->Arg, "bnegax") == 0) {
                 Neg = 1;
@@ -448,9 +449,9 @@ unsigned OptBoolUnary2 (CodeSeg* S)
         /* Check for the sequence.
         ** We allow the first entry to have labels.
         */
-        if (L[0]->OPC == OP65_JSR                   &&
-            (L[1] = CS_GetNextEntry (S, I)) != 0    &&
-            !CE_HasLabel (L[1])                     &&
+        if ((L[0]->OPC == OP65_JSR || L[0]->OPC == OP65_JSL) &&
+            (L[1] = CS_GetNextEntry (S, I)) != 0             &&
+            !CE_HasLabel (L[1])                              &&
             (Cond = FindBoolCmpCond (L[0]->Arg)) != CMP_INV) {
             if ((L[1]->OPC == OP65_CMP && CE_IsKnownImm (L[1], 0x0)) ||
                 CE_IsCallTo (L[1], "boolne") ||
@@ -713,7 +714,7 @@ unsigned OptBNegAX1 (CodeSeg* S)
         /* Check if this is a call to bnegax, and if X is known and zero */
         if (E->RI->In.RegX == 0 && CE_IsCallTo (E, "bnegax")) {
 
-            CodeEntry* X = NewCodeEntry (OP65_JSR, AM65_ABS, "bnega", 0, E->LI);
+            CodeEntry* X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, "bnega", 0, E->LI);
             CS_InsertEntry (S, X, I+1);
             CS_DelEntry (S, I);
 
@@ -894,9 +895,9 @@ unsigned OptBNegAX4 (CodeSeg* S)
         CodeEntry* E = CS_GetEntry (S, I);
 
         /* Check for the sequence */
-        if (E->OPC == OP65_JSR                  &&
+        if ((E->OPC == OP65_JSR || E->OPC == OP65_JSL) &&
             CS_GetEntries (S, L, I+1, 2)        &&
-            L[0]->OPC == OP65_JSR               &&
+            (L[0]->OPC == OP65_JSR || L[0]->OPC == OP65_JSL) &&
             strncmp (L[0]->Arg,"bnega",5) == 0  &&
             !CE_HasLabel (L[0])                 &&
             (L[1]->Info & OF_ZBRA) != 0         &&

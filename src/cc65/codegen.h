@@ -247,7 +247,7 @@ void g_scale (unsigned flags, long val);
 void g_enter (unsigned flags, unsigned argsize);
 /* Function prologue */
 
-void g_leave (int DoCleanup);
+void g_leave (int DoCleanup, int FunctionIsLong);
 /* Function epilogue */
 
 

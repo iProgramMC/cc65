@@ -54,7 +54,7 @@
 
 
 
-/* Opcode description table */
+/* Opcode description table - Must be ordered lexicographically by opcode name! */
 const OPCDesc OPCTable[OP65_COUNT] = {
 
     /* 65XX opcodes */
@@ -296,6 +296,13 @@ const OPCDesc OPCTable[OP65_COUNT] = {
         PSTATE_N,                               /* use */
         REG_NONE                                /* chg */
     },
+    {   OP65_JML,                               /* opcode */
+        "jml",                                  /* mnemonic */
+        4,                                      /* size */
+        OF_UBRA | OF_LBRA | OF_READ,            /* flags */
+        REG_NONE,                               /* use */
+        REG_NONE                                /* chg */
+    },
     {   OP65_JMP,                               /* opcode */
         "jmp",                                  /* mnemonic */
         3,                                      /* size */
@@ -315,6 +322,13 @@ const OPCDesc OPCTable[OP65_COUNT] = {
         5,                                      /* size */
         OF_CBRA | OF_LBRA | OF_FBRA,            /* flags */
         PSTATE_N,                               /* use */
+        REG_NONE                                /* chg */
+    },
+    {   OP65_JSL,                               /* opcode */
+        "jsl",                                  /* mnemonic */
+        4,                                      /* size */
+        OF_CALL | OF_READ,                      /* flags */
+        REG_NONE,                               /* use */
         REG_NONE                                /* chg */
     },
     {   OP65_JSR,                               /* opcode */
@@ -459,6 +473,13 @@ const OPCDesc OPCTable[OP65_COUNT] = {
         OF_RET,                                 /* flags */
         REG_AXY,                                /* use */
         PSTATE_ALL                              /* chg */
+    },
+    {   OP65_RTL,                               /* opcode */
+        "rtl",                                  /* mnemonic */
+        1,                                      /* size */
+        OF_RET,                                 /* flags */
+        REG_NONE,                               /* use */
+        REG_NONE                                /* chg */
     },
     {   OP65_RTS,                               /* opcode */
         "rts",                                  /* mnemonic */

@@ -66,7 +66,7 @@ static unsigned OptPtrStore1Sub (CodeSeg* S, unsigned I, CodeEntry** const L)
     if (L[0]->OPC == OP65_AND                                           ||
         L[0]->OPC == OP65_EOR                                           ||
         L[0]->OPC == OP65_ORA                                           ||
-        (L[0]->OPC == OP65_JSR                          &&
+        ((L[0]->OPC == OP65_JSR || L[0]->OPC == OP65_JSL)               &&
          (strncmp (L[0]->Arg, "shlax", 5) == 0  ||
           strncmp (L[0]->Arg, "shrax", 5) == 0)         &&
          strlen (L[0]->Arg) == 6                        &&

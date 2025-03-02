@@ -65,6 +65,7 @@ IntStack CheckStack         = INTSTACK(0);  /* Generate stack overflow checks */
 IntStack Optimize           = INTSTACK(0);  /* Optimize flag */
 IntStack CodeSizeFactor     = INTSTACK(100);/* Size factor for generated code */
 IntStack DataAlignment      = INTSTACK(1);  /* Alignment for data */
+IntStack CRTIsLong          = INTSTACK(0);  /* C runtime functions must be called with jsl/jml instead of jsr/jmp */
 
 /* File names */
 StrBuf DepName        = STATIC_STRBUF_INITIALIZER; /* Name of dependencies file */

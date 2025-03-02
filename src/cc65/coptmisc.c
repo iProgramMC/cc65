@@ -45,6 +45,7 @@
 #include "coptmisc.h"
 #include "error.h"
 #include "symtab.h"
+#include "codeoptutil.h"
 
 
 
@@ -420,7 +421,7 @@ unsigned OptStackPtrOps (CodeSeg* S)
         const CodeEntry* E = CS_GetEntry (S, I);
 
         /* Check for decspn or subysp */
-        if (E->OPC == OP65_JSR                          &&
+        if ((E->OPC == OP65_JSR || E->OPC == OP65_JSL)  &&
             (Dec1 = IsDecSP (E)) > 0                    &&
             (N = CS_GetNextEntry (S, I)) != 0           &&
             (Dec2 = IsDecSP (N)) > 0                    &&
@@ -434,14 +435,14 @@ unsigned OptStackPtrOps (CodeSeg* S)
             if (Dec1 <= 8) {
                 /* Insert a call to decsp */
                 xsprintf (Buf, sizeof (Buf), "decsp%u", Dec1);
-                X = NewCodeEntry (OP65_JSR, AM65_ABS, Buf, 0, N->LI);
+                X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, Buf, 0, N->LI);
                 CS_InsertEntry (S, X, I+2);
             } else {
                 /* Insert a call to subysp */
                 const char* Arg = MakeHexArg (Dec1);
                 X = NewCodeEntry (OP65_LDY, AM65_IMM, Arg, 0, N->LI);
                 CS_InsertEntry (S, X, I+2);
-                X = NewCodeEntry (OP65_JSR, AM65_ABS, "subysp", 0, N->LI);
+                X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, "subysp", 0, N->LI);
                 CS_InsertEntry (S, X, I+3);
             }
 
@@ -507,7 +508,7 @@ unsigned OptGotoSPAdj (CodeSeg* S)
                 char Buf[20];
                 adjustment = 65536 - adjustment;
                 xsprintf (Buf, sizeof (Buf), "decsp%u", adjustment);
-                X = NewCodeEntry (OP65_JSR, AM65_ABS, Buf, 0, L[1]->LI);
+                X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, Buf, 0, L[1]->LI);
                 CS_InsertEntry (S, X, I + 9);
 
                 /* Delete the old code */
@@ -519,7 +520,7 @@ unsigned OptGotoSPAdj (CodeSeg* S)
                 Arg = MakeHexArg (adjustment);
                 X = NewCodeEntry (OP65_LDY, AM65_IMM, Arg, 0, L[1]->LI);
                 CS_InsertEntry (S, X, I + 9);
-                X = NewCodeEntry (OP65_JSR, AM65_ABS, "subysp", 0, L[1]->LI);
+                X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, "subysp", 0, L[1]->LI);
                 CS_InsertEntry (S, X, I + 10);
 
                 /* Delete the old code */
@@ -545,7 +546,7 @@ unsigned OptGotoSPAdj (CodeSeg* S)
                 Arg = MakeHexArg (adjustment & 0xff);
                 X = NewCodeEntry (OP65_LDY, AM65_IMM, Arg, 0, L[1]->LI);
                 CS_InsertEntry (S, X, I + 9);
-                X = NewCodeEntry (OP65_JSR, AM65_ABS, "addysp", 0, L[1]->LI);
+                X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, "addysp", 0, L[1]->LI);
                 CS_InsertEntry (S, X, I + 10);
 
                 /* Delete the old code */
@@ -555,7 +556,7 @@ unsigned OptGotoSPAdj (CodeSeg* S)
                 /* If adjustment is in range (0, 8] we use incsp* calls */
                 char Buf[20];
                 xsprintf (Buf, sizeof (Buf), "incsp%u", adjustment);
-                X = NewCodeEntry (OP65_JSR, AM65_ABS, Buf, 0, L[1]->LI);
+                X = NewCodeEntry (GetCrtCallCode(), AM65_ABS, Buf, 0, L[1]->LI);
                 CS_InsertEntry (S, X, I + 9);
 
                 /* Delete the old code */

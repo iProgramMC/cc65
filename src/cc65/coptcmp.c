@@ -254,7 +254,7 @@ unsigned OptCmp3 (CodeSeg* S)
             ** the carry flag is not evaluated later, because the load will
             ** not set the carry flag.
             */
-            if (L[2]->OPC == OP65_JSR) {
+            if (L[2]->OPC == OP65_JSR || L[2]->OPC == OP65_JSL) {
                 switch (FindBoolCmpCond (L[2]->Arg)) {
 
                     case CMP_EQ:
@@ -287,7 +287,7 @@ unsigned OptCmp3 (CodeSeg* S)
                     N->OPC != OP65_BCS                          &&
                     N->OPC != OP65_JCC                          &&
                     N->OPC != OP65_JCS                          &&
-                    (N->OPC != OP65_JSR                 ||
+                    ((N->OPC != OP65_JSR && N->OPC != OP65_JSL) ||
                     FindBoolCmpCond (N->Arg) == CMP_INV)) {
 
                     /* The following insn branches on the condition of a load,
@@ -641,7 +641,7 @@ unsigned OptCmp8 (CodeSeg* S)
                         /* Jump to branch that relies on the comparison. */
                         (L->Owner->Info & (OF_CBRA | OF_ZBRA)) ||
                         /* Jump to boolean transformer that relies on the comparison. */
-                        (L->Owner->OPC == OP65_JSR &&
+                        ((L->Owner->OPC == OP65_JSR || L->Owner->OPC == OP65_JSL) &&
                          (FindBoolCmpCond (L->Owner->Arg)) != CMP_INV)
                        )
                     {

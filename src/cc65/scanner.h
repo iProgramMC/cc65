@@ -83,6 +83,7 @@ typedef enum token_t {
     /* Address sizes */
     TOK_FAR,
     TOK_NEAR,
+    TOK_LONGFN,
 
     /* Tokens denoting types */
     TOK_FIRST_TYPE,

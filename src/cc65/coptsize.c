@@ -891,7 +891,7 @@ unsigned OptSize1 (CodeSeg* S)
         E = CS_GetEntry (S, I);
 
         /* Check if it's a subroutine call */
-        if (E->OPC == OP65_JSR && (D = FindCall (E->Arg)) != 0) {
+        if ((E->OPC == OP65_JSR || E->OPC == OP65_JSL) && (D = FindCall (E->Arg)) != 0) {
 
             /* Get input register info for this insn */
             const RegContents* In = &E->RI->In;

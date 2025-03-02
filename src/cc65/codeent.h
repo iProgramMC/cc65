@@ -275,10 +275,10 @@ int CE_IsKnownImm (const CodeEntry* E, unsigned long Num);
 INLINE int CE_IsCallTo (const CodeEntry* E, const char* Name)
 /* Check if this is a call to the given function */
 {
-    return (E->OPC == OP65_JSR && strcmp (E->Arg, Name) == 0);
+    return ((E->OPC == OP65_JSR || E->OPC == OP65_JSL) && strcmp (E->Arg, Name) == 0);
 }
 #else
-#  define CE_IsCallTo(E, Name) ((E)->OPC == OP65_JSR && strcmp ((E)->Arg, (Name)) == 0)
+#  define CE_IsCallTo(E, Name) (((E)->OPC == OP65_JSR || (E)->OPC == OP65_JSL) && strcmp ((E)->Arg, (Name)) == 0)
 #endif
 
 int CE_UseLoadFlags (CodeEntry* E);

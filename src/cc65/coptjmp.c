@@ -354,6 +354,133 @@ unsigned OptRTSJumps2 (CodeSeg* S)
     return Changes;
 }
 
+/**********************************************************************/
+/* IPROGRAM - Now I know repeating code sucks... but what can you do? */
+/**********************************************************************/
+
+unsigned OptRTLJumps1 (CodeSeg* S)
+/* Replace jumps to RTS by RTS */
+{
+    unsigned Changes = 0;
+
+    /* Walk over all entries minus the last one */
+    unsigned I = 0;
+    while (I < CS_GetEntryCount (S)) {
+
+        /* Get the next entry */
+        CodeEntry* E = CS_GetEntry (S, I);
+
+        /* Check if it's an unconditional branch to a local target */
+        if ((E->Info & OF_UBRA) != 0            &&
+            E->JumpTo != 0                      &&
+            E->JumpTo->Owner->OPC == OP65_RTL) {
+
+            /* Insert an RTL instruction */
+            CodeEntry* X = NewCodeEntry (OP65_RTL, AM65_IMP, 0, 0, E->LI);
+            CS_InsertEntry (S, X, I+1);
+
+            /* Delete the jump */
+            CS_DelEntry (S, I);
+
+            /* Remember, we had changes */
+            ++Changes;
+
+        }
+
+        /* Next entry */
+        ++I;
+
+    }
+
+    /* Return the number of changes made */
+    return Changes;
+}
+
+
+
+unsigned OptRTLJumps2 (CodeSeg* S)
+/* Replace long conditional jumps to RTL or to a final target */
+{
+    unsigned Changes = 0;
+
+    /* Walk over all entries minus the last one */
+    unsigned I = 0;
+    while (I < CS_GetEntryCount (S) - 1) {
+
+        /* Get the next entry */
+        CodeEntry* E = CS_GetEntry (S, I);
+
+        /* Check if it's an conditional branch to a local target */
+        if ((E->Info & OF_CBRA) != 0            &&   /* Conditional branch */
+            (E->Info & OF_LBRA) != 0            &&   /* Long branch */
+            E->JumpTo != 0) {                        /* Local label */
+
+
+            /* Get the jump target and the next entry. There's always a next
+            ** entry, because we don't cover the last entry in the loop.
+            */
+            CodeEntry* X = 0;
+            CodeEntry* T = E->JumpTo->Owner;
+            CodeEntry* N = CS_GetNextEntry (S, I);
+
+            /* Check if it's a jump to an RTS insn */
+            if (T->OPC == OP65_RTL) {
+
+                /* It's a jump to RTL. Create a conditional branch around an
+                ** RTS insn.
+                */
+                X = NewCodeEntry (OP65_RTL, AM65_IMP, 0, 0, T->LI);
+
+            } else if (T->OPC == OP65_JMP && T->JumpTo == 0) {
+
+                /* It's a jump to a label outside the function. Create a
+                ** conditional branch around a jump to the external label.
+                */
+                X = NewCodeEntry (OP65_JMP, AM65_ABS, T->Arg, T->JumpTo, T->LI);
+
+            }
+
+            /* If we have a replacement insn, insert it */
+            if (X) {
+
+                CodeLabel* LN;
+                opc_t      NewBranch;
+
+                /* Insert the new insn */
+                CS_InsertEntry (S, X, I+1);
+
+                /* Create a conditional branch with the inverse condition
+                ** around the replacement insn
+                */
+
+                /* Get the new branch opcode */
+                NewBranch = MakeShortBranch (GetInverseBranch (E->OPC));
+
+                /* Get the label attached to N, create a new one if needed */
+                LN = CS_GenLabel (S, N);
+
+                /* Generate the branch */
+                X = NewCodeEntry (NewBranch, AM65_BRA, LN->Name, LN, E->LI);
+                CS_InsertEntry (S, X, I+1);
+
+                /* Delete the long branch */
+                CS_DelEntry (S, I);
+
+                /* Remember, we had changes */
+                ++Changes;
+
+            }
+        }
+
+        /* Next entry */
+        ++I;
+
+    }
+
+    /* Return the number of changes made */
+    return Changes;
+}
+
 
 
 /*****************************************************************************/
@@ -623,6 +750,48 @@ unsigned OptRTS (CodeSeg* S)
             /* Change the jsr to a jmp and use the additional info for a jump */
             E->AM = AM65_BRA;
             CE_ReplaceOPC (E, OP65_JMP);
+
+            /* Remember, we had changes */
+            ++Changes;
+
+        }
+
+        /* Next entry */
+        ++I;
+
+    }
+
+    /* Return the number of changes made */
+    return Changes;
+}
+
+/* IPROGRAM: Same story. */
+
+unsigned OptRTL (CodeSeg* S)
+/* Optimize subroutine calls followed by an RTL. The subroutine call will get
+** replaced by a jump. Don't bother to delete the RTL if it does not have a
+** label, the dead code elimination should take care of it.
+*/
+{
+    unsigned Changes = 0;
+
+    /* Walk over all entries minus the last one */
+    unsigned I = 0;
+    while (I < CS_GetEntryCount (S)) {
+
+        CodeEntry* N;
+
+        /* Get this entry */
+        CodeEntry* E = CS_GetEntry (S, I);
+
+        /* Check if it's a subroutine call and if the following insn is RTL */
+        if (E->OPC == OP65_JSL                    &&
+            (N = CS_GetNextEntry (S, I)) != 0 &&
+            N->OPC == OP65_RTL) {
+
+            /* Change the jsl to a jml and use the additional info for a jump */
+            E->AM = AM65_BRA;
+            CE_ReplaceOPC (E, OP65_JML);
 
             /* Remember, we had changes */
             ++Changes;

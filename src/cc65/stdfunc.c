@@ -55,6 +55,7 @@
 #include "stdfunc.h"
 #include "stdnames.h"
 #include "typeconv.h"
+#include "util.h"
 
 
 
@@ -1356,7 +1357,7 @@ static void StdFunc_strlen (FuncDesc* F attribute ((unused)), ExprDesc* Expr)
     LoadExpr (CF_NONE, &Arg);
 
     /* Call the strlen function */
-    AddCodeLine ("jsr _%s", Func_strlen);
+    AddCodeLine ("%s _%s", CrtJsrOrJsl(), Func_strlen);
 
     /* The function result is an rvalue in the primary register */
     ED_FinalizeRValLoad (Expr);

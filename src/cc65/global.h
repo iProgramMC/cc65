@@ -73,6 +73,7 @@ extern IntStack         CheckStack;             /* Generate stack overflow check
 extern IntStack         Optimize;               /* Optimize flag */
 extern IntStack         CodeSizeFactor;         /* Size factor for generated code */
 extern IntStack         DataAlignment;          /* Alignment for data */
+extern IntStack         CRTIsLong;              /* C runtime functions must be called with jsl/jml instead of jsr/jmp */
 
 /* File names */
 extern StrBuf           DepName;                /* Name of dependencies file */

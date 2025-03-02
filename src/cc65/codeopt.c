@@ -184,6 +184,9 @@ static OptFunc DOptPushPop3     = { OptPushPop3,     "OptPushPop3",       0, 0, 
 static OptFunc DOptRTS          = { OptRTS,          "OptRTS",          100, 0, 0, 0, 0, 0 };
 static OptFunc DOptRTSJumps1    = { OptRTSJumps1,    "OptRTSJumps1",    100, 0, 0, 0, 0, 0 };
 static OptFunc DOptRTSJumps2    = { OptRTSJumps2,    "OptRTSJumps2",    100, 0, 0, 0, 0, 0 };
+static OptFunc DOptRTL          = { OptRTL,          "OptRTL",          100, 0, 0, 0, 0, 0 };
+static OptFunc DOptRTLJumps1    = { OptRTLJumps1,    "OptRTLJumps1",    100, 0, 0, 0, 0, 0 };
+static OptFunc DOptRTLJumps2    = { OptRTLJumps2,    "OptRTLJumps2",    100, 0, 0, 0, 0, 0 };
 static OptFunc DOptShift1       = { OptShift1,       "OptShift1",       100, 0, 0, 0, 0, 0 };
 static OptFunc DOptShift2       = { OptShift2,       "OptShift2",       100, 0, 0, 0, 0, 0 };
 static OptFunc DOptShift3       = { OptShift3,       "OptShift3",        17, 0, 0, 0, 0, 0 };
@@ -300,6 +303,9 @@ static OptFunc* OptFuncs[] = {
     &DOptRTS,
     &DOptRTSJumps1,
     &DOptRTSJumps2,
+    &DOptRTL,
+    &DOptRTLJumps1,
+    &DOptRTLJumps2,
     &DOptShift1,
     &DOptShift2,
     &DOptShift3,
@@ -716,6 +722,7 @@ static unsigned RunOptGroup3 (CodeSeg* S)
         C += RunOptFunc (S, &DOptCondBranch3, 1);
         C += RunOptFunc (S, &DOptCondBranchC, 1);
         C += RunOptFunc (S, &DOptRTSJumps1, 1);
+        C += RunOptFunc (S, &DOptRTLJumps1, 1);
         C += RunOptFunc (S, &DOptBoolCmp, 1);
         C += RunOptFunc (S, &DOptBoolTrans, 1);
         C += RunOptFunc (S, &DOptBNegA2, 1);        /* After OptCondBranch's */
@@ -877,9 +884,11 @@ static unsigned RunOptGroup7 (CodeSeg* S)
 
     /* Replace conditional branches to RTS */
     C = RunOptFunc (S, &DOptRTSJumps2, 1);
+    C = RunOptFunc (S, &DOptRTLJumps2, 1);
 
     /* Replace JSR followed by RTS to JMP */
     C += RunOptFunc (S, &DOptRTS, 1);
+    C += RunOptFunc (S, &DOptRTL, 1);
 
     /* Replace JMP/BRA to JMP by direct JMP */
     C += RunOptFunc (S, &DOptJumpCascades, 1);

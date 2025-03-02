@@ -468,7 +468,7 @@ unsigned OptAdd5 (CodeSeg* S)
         E = CS_GetEntry (S, I);
 
         /* Check for the sequence */
-        if (E->OPC == OP65_JSR                          &&
+        if ((E->OPC == OP65_JSR || E->OPC == OP65_JSL)  &&
             strncmp (E->Arg, "incax", 5) == 0           &&
             IsDigit (E->Arg[5])                         &&
             E->Arg[6] == '\0'                           &&

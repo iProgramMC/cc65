@@ -126,7 +126,8 @@ enum {
     T_QUAL_FASTCALL = 0x200000,
     T_QUAL_CDECL    = 0x400000,
     T_QUAL_CCONV    = T_QUAL_FASTCALL | T_QUAL_CDECL,
-    T_MASK_QUAL     = 0x7F0000,
+    T_QUAL_LONGFN   = 0x800000,
+    T_MASK_QUAL     = 0xFF0000,
 
     /* Types */
     T_CHAR      = T_RANK_CHAR     | T_CLASS_INT    | T_SIGN_NONE     | T_SIZE_CHAR,
