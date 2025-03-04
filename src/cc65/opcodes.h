@@ -100,10 +100,13 @@ typedef enum {
     OP65_NOP,
     OP65_ORA,
     OP65_PHA,
+    OP65_PHB,
+    OP65_PHK,
     OP65_PHP,
     OP65_PHX,
     OP65_PHY,
     OP65_PLA,
+    OP65_PLB,
     OP65_PLP,
     OP65_PLX,
     OP65_PLY,
@@ -129,6 +132,7 @@ typedef enum {
     OP65_TXA,
     OP65_TXS,
     OP65_TYA,
+    OP65_XBA,
 
     /* Number of opcodes available */
     OP65_COUNT,

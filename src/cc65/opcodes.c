@@ -401,6 +401,20 @@ const OPCDesc OPCTable[OP65_COUNT] = {
         REG_A,                                  /* use */
         REG_NONE                                /* chg */
     },
+    {   OP65_PHB,                               /* opcode */
+        "phb",                                  /* mnemonic */
+        1,                                      /* size */
+        OF_NONE,                                /* flags */
+        PSTATE_ALL,                             /* use */
+        REG_NONE                                /* chg */
+    },
+    {   OP65_PHK,                               /* opcode */
+        "phk",                                  /* mnemonic */
+        1,                                      /* size */
+        OF_NONE,                                /* flags */
+        PSTATE_ALL,                             /* use */
+        REG_NONE                                /* chg */
+    },
     {   OP65_PHP,                               /* opcode */
         "php",                                  /* mnemonic */
         1,                                      /* size */
@@ -424,6 +438,13 @@ const OPCDesc OPCTable[OP65_COUNT] = {
     },
     {   OP65_PLA,                               /* opcode */
         "pla",                                  /* mnemonic */
+        1,                                      /* size */
+        OF_SETF,                                /* flags */
+        REG_NONE,                               /* use */
+        REG_A | PSTATE_ZN                       /* chg */
+    },
+    {   OP65_PLB,                               /* opcode */
+        "plb",                                  /* mnemonic */
         1,                                      /* size */
         OF_SETF,                                /* flags */
         REG_NONE,                               /* use */
@@ -605,6 +626,13 @@ const OPCDesc OPCTable[OP65_COUNT] = {
         1,                                      /* size */
         OF_XFR | OF_SETF,                       /* flags */
         REG_Y,                                  /* use */
+        REG_A | PSTATE_ZN                       /* chg */
+    },
+    {   OP65_XBA,                               /* opcode */
+        "xba",                                  /* mnemonic */
+        1,                                      /* size */
+        OF_XFR | OF_SETF,                       /* flags */
+        REG_A,                                  /* use */
         REG_A | PSTATE_ZN                       /* chg */
     },
 };
